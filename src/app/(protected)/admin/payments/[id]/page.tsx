@@ -27,7 +27,6 @@ import {
 import { ArrowLeft, Loader2, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   paid: "default",
@@ -41,7 +40,7 @@ export default function AdminOrderDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const router = useRouter();
+  // const { id } = use(params);
   const { id } = use(params);
   const { data, isLoading, refetch } = useOrder(id);
   const refundOrder = useRefundOrder();

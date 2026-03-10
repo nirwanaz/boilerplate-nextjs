@@ -11,7 +11,7 @@ export async function DELETE(
     await requireAuthWithRole("admin");
     await marketingService.deleteSeo(id);
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Bad Request" }, { status: 400 });
   }
 }

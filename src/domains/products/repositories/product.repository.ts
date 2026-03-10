@@ -12,7 +12,7 @@ export class ProductRepository {
       orderBy: [desc(schema.products.createdAt)]
     });
 
-    return data.map((item: any) => this.transformProduct(item));
+    return data.map((item) => this.transformProduct(item));
   }
 
   async findById(id: string): Promise<Product | null> {
@@ -31,7 +31,7 @@ export class ProductRepository {
       description: input.description,
       price: input.price,
       currency: input.currency,
-      status: input.status as any,
+      status: input.status as "active" | "inactive",
       imageUrl: input.imageUrl,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -44,7 +44,7 @@ export class ProductRepository {
     await db.update(schema.products)
       .set({ 
         ...input, 
-        status: input.status as any,
+        status: input.status as "active" | "inactive",
         updatedAt: new Date() 
       })
       .where(eq(schema.products.id, id));
@@ -61,8 +61,8 @@ export class ProductRepository {
       ...data,
       imageUrl: data.imageUrl || null,
       description: data.description || null,
-      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : data.createdAt,
-      updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : data.updatedAt
+      createdAt: data.createdAt ? data.createdAt.toISOString() : "",
+      updatedAt: data.updatedAt ? data.updatedAt.toISOString() : ""
     };
   }
 }

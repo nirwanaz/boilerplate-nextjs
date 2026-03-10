@@ -9,13 +9,14 @@ import { toast } from "sonner";
 import { Loader2, ShoppingCart, Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import type { Product } from "@/domains/products/entities/product";
 
 export default function ProductsPage() {
   const { data: products, isLoading } = useProducts(true); // Only active products
   const { addItem, getTotalItems } = useCartStore();
   const totalItems = getTotalItems();
 
-  function handleAddToCart(product: any) {
+  function handleAddToCart(product: Product) {
     addItem({
       productId: product.id,
       name: product.name,

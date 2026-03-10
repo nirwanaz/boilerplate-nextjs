@@ -7,7 +7,7 @@ export async function GET() {
     await requireAuthWithRole("admin");
     const subscribers = await newsletterService.getSubscribers();
     return NextResponse.json(subscribers);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const subscriber = await newsletterService.subscribe(body);
     return NextResponse.json(subscriber);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Bad Request" }, { status: 400 });
   }
 }

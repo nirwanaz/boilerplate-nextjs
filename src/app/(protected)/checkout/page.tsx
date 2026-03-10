@@ -16,10 +16,8 @@ import {
 import { toast } from "sonner";
 import { Loader2, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCartStore();
   const createCheckout = useCreateCheckout();
   const totalPrice = getTotalPrice();
@@ -32,10 +30,11 @@ export default function CheckoutPage() {
 
     try {
       // Product-based checkout (the API will auto-detect this)
-      const checkoutData: any = {
+      const checkoutData = {
         items: items.map((item) => ({
-          productId: item.productId,
+          name: item.name,
           quantity: item.quantity,
+          unitPrice: item.price,
         })),
         currency: "usd",
       };

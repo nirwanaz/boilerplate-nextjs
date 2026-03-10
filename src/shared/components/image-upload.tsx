@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { X, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
@@ -50,13 +51,16 @@ export function ImageUpload({
         {/* Image Preview */}
         {value && (
           <div className="relative w-full aspect-video border rounded-lg overflow-hidden bg-muted">
-            <img
+            <Image
               src={value}
               alt="Preview"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = "";
-                e.currentTarget.style.display = "none";
+              fill
+              className="object-cover"
+              unoptimized
+              onLoadingComplete={(img) => {
+                if (img.naturalWidth === 0) {
+                  // Fallback logic if needed, but unoptimized handles most dynamic URLs
+                }
               }}
             />
             {!value && (

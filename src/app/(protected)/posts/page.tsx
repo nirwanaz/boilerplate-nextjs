@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Plus, Trash2, Eye, Loader2, ExternalLink } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { generateSlug } from "@/shared/lib/slug";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,7 @@ export default function PostsPage() {
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchTitle = watch("title", "");
   const watchSlug = watch("slug", "");
   const watchContent = watch("content", "");
@@ -249,10 +251,12 @@ export default function PostsPage() {
                       <TableCell>
                         {post.featuredImage ? (
                           <div className="relative w-16 h-10 rounded overflow-hidden bg-muted">
-                            <img 
+                            <Image 
                               src={post.featuredImage} 
                               alt={post.title}
-                              className="w-full h-full object-cover"
+                              fill
+                              className="object-cover"
+                              unoptimized
                             />
                           </div>
                         ) : (

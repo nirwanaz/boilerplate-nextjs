@@ -52,8 +52,8 @@ export class SeoRepository {
   private transform(data: typeof schema.seoSettings.$inferSelect): SeoSetting {
     return {
       ...data,
-      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : (data.createdAt as any),
-      updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : (data.updatedAt as any),
+      createdAt: data.createdAt ? data.createdAt.toISOString() : "",
+      updatedAt: data.updatedAt ? data.updatedAt.toISOString() : "",
     };
   }
 }

@@ -33,7 +33,7 @@ export default function NewsletterForm() {
           setStatus("error");
           setMessage(data.error || "Something went wrong.");
         }
-      } catch (err) {
+      } catch {
         setStatus("error");
         setMessage("Failed to connect. Please try again.");
       }

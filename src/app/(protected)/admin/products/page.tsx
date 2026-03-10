@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Plus, Pencil, Trash2, Package } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export default function AdminProductsPage() {
@@ -131,6 +132,7 @@ export default function AdminProductsPage() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchStatus = watch("status");
 
   return (
@@ -202,7 +204,14 @@ export default function AdminProductsPage() {
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-xl bg-slate-950 border border-white/[0.05] flex items-center justify-center font-bold text-lg text-white overflow-hidden shadow-inner group-hover:border-white/10 transition-colors">
                             {product.imageUrl ? (
-                              <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                              <Image 
+                                src={product.imageUrl} 
+                                alt={product.name} 
+                                width={48} 
+                                height={48} 
+                                className="h-full w-full object-cover" 
+                                unoptimized
+                              />
                             ) : (
                               product.name[0].toUpperCase()
                             )}

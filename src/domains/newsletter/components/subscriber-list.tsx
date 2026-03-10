@@ -27,7 +27,7 @@ interface SubscriberListProps {
 
 export default function SubscriberList({ initialData }: SubscriberListProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to remove this subscriber?")) return;

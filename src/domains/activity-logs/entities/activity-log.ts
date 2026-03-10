@@ -14,6 +14,13 @@ export const activityLogSchema = z.object({
 
 export type ActivityLog = z.infer<typeof activityLogSchema>;
 
+export type ActivityLogWithUser = ActivityLog & {
+  user?: {
+    name: string | null;
+    email: string;
+  } | null;
+};
+
 export const createActivityLogSchema = activityLogSchema.omit({
   id: true,
   createdAt: true,

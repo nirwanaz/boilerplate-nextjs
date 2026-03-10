@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { marketingService } from "@/domains/marketing/services/marketing.service";
 import { requireAuthWithRole } from "@/shared/auth/dal";
-import { z } from "zod";
 
 export async function GET() {
   try {

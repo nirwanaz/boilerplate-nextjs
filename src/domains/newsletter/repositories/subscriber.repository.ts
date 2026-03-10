@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import type { Subscriber, CreateSubscriberInput } from "../entities/subscriber";
 
 export class SubscriberRepository {
@@ -71,8 +71,8 @@ export class SubscriberRepository {
   private transform(data: typeof schema.subscribers.$inferSelect): Subscriber {
     return {
       ...data,
-      subscribedAt: data.subscribedAt instanceof Date ? data.subscribedAt.toISOString() : (data.subscribedAt as any),
-      unsubscribedAt: data.unsubscribedAt instanceof Date ? data.unsubscribedAt.toISOString() : data.unsubscribedAt as any,
+      subscribedAt: data.subscribedAt ? data.subscribedAt.toISOString() : "",
+      unsubscribedAt: data.unsubscribedAt ? data.unsubscribedAt.toISOString() : null,
     };
   }
 }

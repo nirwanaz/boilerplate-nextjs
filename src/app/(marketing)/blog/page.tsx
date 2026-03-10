@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
+import Image from "next/image";
 
 export const metadata = {
   title: "Blog - Latest Updates",
@@ -35,10 +36,12 @@ export default async function BlogIndexPage() {
             <Card key={post.id} className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow duration-300 border-none bg-card/50 backdrop-blur-sm">
               <Link href={`/blog/${post.slug || post.id}`} className="block aspect-video relative bg-muted group overflow-hidden">
                 {post.featuredImage ? (
-                  <img
+                  <Image
                     src={post.featuredImage}
                     alt={post.title}
-                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/50">

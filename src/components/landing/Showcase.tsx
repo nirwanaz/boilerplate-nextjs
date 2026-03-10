@@ -214,7 +214,7 @@ export default function Showcase({ title, subtitle }: ShowcaseProps) {
                   <span className="text-slate-400">()</span>
                 </div>
                 <div className="mt-2 text-emerald-600/60">
-                  // ✨ That&apos;s it. You&apos;re live.
+                  {"// ✨ That's it. You're live."}
                 </div>
               </div>
             </div>

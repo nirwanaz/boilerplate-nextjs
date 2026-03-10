@@ -60,9 +60,9 @@ export class NewsletterRepository {
   private transform(data: typeof schema.newsletters.$inferSelect): Newsletter {
     return {
       ...data,
-      sentAt: data.sentAt instanceof Date ? data.sentAt.toISOString() : data.sentAt as any,
-      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : (data.createdAt as any),
-      updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : (data.updatedAt as any),
+      sentAt: data.sentAt ? data.sentAt.toISOString() : null,
+      createdAt: data.createdAt ? data.createdAt.toISOString() : "",
+      updatedAt: data.updatedAt ? data.updatedAt.toISOString() : "",
     };
   }
 }

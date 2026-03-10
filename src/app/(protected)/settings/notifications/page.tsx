@@ -15,7 +15,7 @@ export default function NotificationsSettingsPage() {
     try {
       await updateSettings.mutateAsync({ [key]: value });
       toast.success("Settings updated");
-    } catch (err) {
+    } catch {
       toast.error("Failed to update settings");
     }
   }

@@ -12,7 +12,7 @@ export async function PATCH(
     const body = await req.json();
     const newsletter = await newsletterService.updateNewsletter(id, body);
     return NextResponse.json(newsletter);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Bad Request" }, { status: 400 });
   }
 }
@@ -26,7 +26,7 @@ export async function DELETE(
     await requireAuthWithRole("admin");
     await newsletterService.deleteNewsletter(id);
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Bad Request" }, { status: 400 });
   }
 }

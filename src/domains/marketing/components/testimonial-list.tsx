@@ -232,7 +232,7 @@ export default function TestimonialList({ initialData }: TestimonialListProps) {
                     <div className="text-xs text-muted-foreground">{t.title}</div>
                   </TableCell>
                   <TableCell className="max-w-[300px] truncate text-sm italic">
-                    "{t.quote}"
+                    &ldquo;{t.quote}&rdquo;
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">

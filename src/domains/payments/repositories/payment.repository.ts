@@ -12,7 +12,7 @@ export class PaymentRepository {
       orderBy: [desc(schema.orders.createdAt)]
     });
 
-    return data.map((item: any) => this.transformOrder(item));
+    return data.map((item) => this.transformOrder(item));
   }
 
   async findById(id: string): Promise<Order | null> {
@@ -45,7 +45,7 @@ export class PaymentRepository {
       amount: input.amount,
       currency: input.currency,
       stripeSessionId: input.stripeSessionId,
-      status: input.status as any,
+      status: input.status as "pending" | "paid" | "failed" | "refunded",
       createdAt: new Date(),
       updatedAt: new Date()
     });
@@ -79,7 +79,7 @@ export class PaymentRepository {
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {
     await db.update(schema.orders)
       .set({ 
-        status: status as any, 
+        status: status as "pending" | "paid" | "failed" | "refunded", 
         updatedAt: new Date() 
       })
       .where(eq(schema.orders.id, id));
@@ -92,7 +92,7 @@ export class PaymentRepository {
       where: eq(schema.orderItems.orderId, orderId)
     });
 
-    return data.map((item: any) => this.transformOrderItem(item));
+    return data.map((item) => this.transformOrderItem(item));
   }
 
   private transformOrder(data: typeof schema.orders.$inferSelect): Order {

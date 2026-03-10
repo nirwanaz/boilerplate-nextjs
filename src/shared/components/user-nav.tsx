@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, User, UserCircle } from "lucide-react";
+import { LogOut, Settings, UserCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { Profile } from "@/shared/types";
 import Link from "next/link";
@@ -45,7 +45,7 @@ export function UserNav({ profile }: UserNavProps) {
       await authClient.signOut();
       router.push("/login");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign out");
     }
   }

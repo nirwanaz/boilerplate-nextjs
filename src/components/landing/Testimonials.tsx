@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-
+import Image from "next/image";
 import type { Testimonial } from "@/domains/marketing/entities/testimonial";
 
 interface TestimonialsProps {
@@ -71,7 +71,14 @@ export default function Testimonials({ testimonials }: TestimonialsProps) {
                     className={`w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400 flex items-center justify-center text-sm font-bold text-white flex-shrink-0`}
                   >
                     {t.avatarUrl ? (
-                      <img src={t.avatarUrl} alt={t.name} className="w-full h-full rounded-full object-cover" />
+                    <Image
+                      src={t.avatarUrl}
+                      alt={t.name}
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover"
+                      unoptimized
+                    />
                     ) : (
                       t.name.charAt(0)
                     )}

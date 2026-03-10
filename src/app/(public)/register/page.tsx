@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -36,6 +35,7 @@ export default function RegisterPage() {
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchPassword = watch("password", "");
 
   // Password strength rules

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState } from "react";
 import { usePost, useUpdatePost } from "@/domains/posts/hooks/use-posts";
 import { RichTextEditor } from "@/shared/components/rich-text-editor";
 import { ImageUpload } from "@/shared/components/image-upload";
@@ -14,74 +14,36 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import type { Post } from "@/domains/posts/entities/post";
 
-export default function PostDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
-  const { data: post, isLoading } = usePost(id);
+function PostEditForm({ post }: { post: Post }) {
   const updatePost = useUpdatePost();
 
-  const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [content, setContent] = useState("");
-  const [excerpt, setExcerpt] = useState("");
-  const [featuredImage, setFeaturedImage] = useState("");
-  const [categoryIds, setCategoryIds] = useState<string[]>([]);
-  const [status, setStatus] = useState<"draft" | "published">("draft");
-
-  useEffect(() => {
-    if (post) {
-      setTitle(post.title || "");
-      setSlug(post.slug || "");
-      setContent(post.content || "");
-      setExcerpt(post.excerpt || "");
-      setFeaturedImage(post.featuredImage || "");
-      setCategoryIds(post.categories?.map(c => c.id) || []);
-      setStatus(post.status);
-    }
-  }, [post]);
+  const [title, setTitle] = useState(post.title || "");
+  const [slug, setSlug] = useState(post.slug || "");
+  const [content, setContent] = useState(post.content || "");
+  const [excerpt, setExcerpt] = useState(post.excerpt || "");
+  const [featuredImage, setFeaturedImage] = useState(post.featuredImage || "");
+  const [categoryIds, setCategoryIds] = useState<string[]>(post.categories?.map(c => c.id) || []);
+  const [status, setStatus] = useState<"draft" | "published">(post.status);
 
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
-    if (!post) return;
-
     try {
       await updatePost.mutateAsync({ 
-        id: post.id, // Use semantic ID for updates
+        id: post.id,
         title, 
         slug,
         content, 
         excerpt: excerpt || undefined,
         featuredImage: featuredImage || undefined,
-        categoryIds: categoryIds,
+        categoryIds,
         status 
       });
       toast.success("Post updated!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update");
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!post) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground">Post not found</p>
-        <Button variant="link" asChild className="mt-4">
-          <Link href="/posts">Back to posts</Link>
-        </Button>
-      </div>
-    );
   }
 
   return (
@@ -100,7 +62,7 @@ export default function PostDetailPage({
         </div>
         {status === "published" && (
           <Button variant="outline" asChild>
-            <Link href={`/blog/${slug || id}`} target="_blank">
+            <Link href={`/blog/${slug || post.id}`} target="_blank">
               <ExternalLink className="h-4 w-4 mr-2" />
               View Public
             </Link>
@@ -227,4 +189,34 @@ export default function PostDetailPage({
       </Card>
     </div>
   );
+}
+
+export default function PostDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const { data: post, isLoading } = usePost(id);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-muted-foreground">Post not found</p>
+        <Button variant="link" asChild className="mt-4">
+          <Link href="/posts">Back to posts</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return <PostEditForm post={post} />;
 }

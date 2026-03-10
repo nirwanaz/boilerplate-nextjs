@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { MoreHorizontal, Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
+import { MoreHorizontal, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import type { SeoSetting } from "../entities/seo";
 import { useRouter } from "next/navigation";
 

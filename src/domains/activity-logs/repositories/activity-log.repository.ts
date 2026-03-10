@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { activityLogs } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
-import type { ActivityLog, CreateActivityLogInput } from "../entities/activity-log";
+import type { ActivityLog, ActivityLogWithUser, CreateActivityLogInput } from "../entities/activity-log";
 export class ActivityLogRepository {
   async create(input: CreateActivityLogInput): Promise<ActivityLog> {
     const id = crypto.randomUUID();
@@ -17,7 +17,7 @@ export class ActivityLogRepository {
     return row as ActivityLog;
   }
 
-  async findAll(limit = 50, offset = 0): Promise<ActivityLog[]> {
+  async findAll(limit = 50, offset = 0): Promise<ActivityLogWithUser[]> {
     const rows = await db.query.activityLogs.findMany({
       orderBy: [desc(activityLogs.createdAt)],
       limit,
@@ -27,15 +27,15 @@ export class ActivityLogRepository {
       },
     });
 
-    return rows as any[];
+    return rows as ActivityLogWithUser[];
   }
 
-  async findByUserId(userId: string): Promise<ActivityLog[]> {
+  async findByUserId(userId: string): Promise<ActivityLogWithUser[]> {
     const rows = await db.query.activityLogs.findMany({
       where: eq(activityLogs.userId, userId),
       orderBy: [desc(activityLogs.createdAt)],
     });
 
-    return rows as any[];
+    return rows as ActivityLogWithUser[];
   }
 }

@@ -16,8 +16,9 @@ export function SocialAuth() {
         provider: "google",
         callbackURL: "/dashboard",
       });
-    } catch (error: any) {
-      toast.error(error.message || "Failed to sign in with Google");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to sign in with Google";
+      toast.error(message);
       setLoading(null);
     }
   }

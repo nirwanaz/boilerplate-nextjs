@@ -99,10 +99,10 @@ export default function AdminLogsPage() {
                           </div>
                           <div className="flex flex-col min-w-0">
                             <span className="font-bold text-white text-base tracking-tight group-hover:text-white transition-colors">
-                              {(log as any).user?.name || "CORE SYSTEM"}
+                              {log.user?.name || "CORE SYSTEM"}
                             </span>
                             <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest opacity-60 truncate max-w-[180px]">
-                              {(log as any).user?.email || "INTERNAL_DAEMON"}
+                              {log.user?.email || "INTERNAL_DAEMON"}
                             </span>
                           </div>
                         </div>

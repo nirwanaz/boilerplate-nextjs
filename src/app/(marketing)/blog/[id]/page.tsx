@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -86,10 +87,12 @@ export default async function BlogPostPage({ params }: Props) {
 
         {post.featuredImage && (
           <div className="rounded-xl overflow-hidden shadow-2xl mb-12 aspect-video relative bg-muted">
-            <img
+            <Image
               src={post.featuredImage}
               alt={post.title}
-              className="object-cover w-full h-full"
+              fill
+              className="object-cover"
+              unoptimized
             />
           </div>
         )}
@@ -105,7 +108,7 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       </article>
     );
-  } catch (error) {
+  } catch {
     notFound();
   }
 }

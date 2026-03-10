@@ -11,11 +11,10 @@ import {
   Star,
   Globe,
   ArrowRight,
-  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ElementType> = {
   FileText,
   Users,
   Mail,
@@ -24,7 +23,29 @@ const iconMap: Record<string, any> = {
   Globe,
 };
 
-export function MarketingClient({ stats, newsletters }: any) {
+interface StatItem {
+  title: string;
+  value: string;
+  description: string;
+  iconName: string;
+  href: string;
+  color: string;
+  bg: string;
+}
+
+interface MarketingNewsletter {
+  id: string;
+  subject: string;
+  status: string;
+  createdAt: Date | string;
+}
+
+interface MarketingClientProps {
+  stats: StatItem[];
+  newsletters: MarketingNewsletter[];
+}
+
+export function MarketingClient({ stats, newsletters }: MarketingClientProps) {
   return (
     <div className="space-y-10">
       <div className="flex flex-col gap-2 px-2">
@@ -37,7 +58,7 @@ export function MarketingClient({ stats, newsletters }: any) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stats.map((stat: any) => (
+        {stats.map((stat) => (
           <Link key={stat.title} href={stat.href} className="group block h-full">
             <Card className="bg-slate-900/40 border-white/[0.05] shadow-sm rounded-3xl overflow-hidden transition-colors hover:border-white/10 h-full">
               <CardContent className="p-8 relative">
@@ -95,7 +116,7 @@ export function MarketingClient({ stats, newsletters }: any) {
               </div>
             ) : (
               <div className="space-y-4">
-                {newsletters.map((nl: any) => (
+                {newsletters.map((nl) => (
                   <div
                     key={nl.id}
                     className="flex items-center justify-between p-6 bg-white/[0.02] border border-white/[0.05] rounded-2xl group/item hover:bg-white/[0.05] hover:border-white/10 transition-all cursor-default"

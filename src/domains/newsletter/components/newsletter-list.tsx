@@ -36,7 +36,6 @@ import {
   Trash2,
   Loader2,
   Send,
-  Mail,
 } from "lucide-react";
 import type { Newsletter } from "../entities/newsletter";
 import { useRouter } from "next/navigation";

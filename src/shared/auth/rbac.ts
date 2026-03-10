@@ -23,12 +23,19 @@ export function hasPermission(
 /**
  * Fetch a profile-like object from a session user.
  */
-export function transformUserToProfile(user: any): Profile {
+export function transformUserToProfile(user: {
+  id: string;
+  email: string;
+  name?: string | null;
+  role?: string | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+}): Profile {
   return {
     id: user.id,
     email: user.email,
     fullName: user.name || null,
-    role: user.role || "user",
+    role: (user.role as Role) || "user",
     createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
     updatedAt: user.updatedAt?.toISOString() || new Date().toISOString(),
   };

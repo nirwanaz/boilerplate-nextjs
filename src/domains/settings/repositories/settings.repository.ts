@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { AppSettings, UserSettings, UpdateUserSettingsInput } from "../entities/settings";
 
 export class SettingsRepository {
@@ -9,7 +9,7 @@ export class SettingsRepository {
     const data = await db.query.appSettings.findMany({
       orderBy: [schema.appSettings.key]
     });
-    return data.map((item: any) => this.transformAppSettings(item));
+    return data.map((item) => this.transformAppSettings(item));
   }
 
   async getAppSetting(key: string): Promise<AppSettings | null> {
@@ -68,7 +68,7 @@ export class SettingsRepository {
     return (await this.getUserSettings(userId))!;
   }
 
-  private transformAppSettings(data: any): AppSettings {
+  private transformAppSettings(data: typeof schema.appSettings.$inferSelect): AppSettings {
     return {
       ...data,
       updatedAt: data.updatedAt.toISOString(),
@@ -76,7 +76,7 @@ export class SettingsRepository {
     };
   }
 
-  private transformUserSettings(data: any): UserSettings {
+  private transformUserSettings(data: typeof schema.userSettings.$inferSelect): UserSettings {
     return {
       ...data,
       updatedAt: data.updatedAt.toISOString(),

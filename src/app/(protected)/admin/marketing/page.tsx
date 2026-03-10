@@ -5,14 +5,6 @@ import * as schema from "@/lib/db/schema";
 import { desc } from "drizzle-orm";
 import { requireAuthWithRole } from "@/shared/auth/dal";
 import { MarketingClient } from "./marketing-client";
-import {
-  FileText,
-  Users,
-  Mail,
-  Search,
-  Star,
-  Globe,
-} from "lucide-react";
 
 export default async function MarketingDashboard() {
   await requireAuthWithRole("admin");
@@ -29,10 +21,10 @@ export default async function MarketingDashboard() {
       marketingService.getLandingContent(),
     ]);
 
-  const stats = [
+  const statItems = [
     {
       title: "Landing Sections",
-      value: new Set(landingContent.map((c) => c.section)).size,
+      value: new Set(landingContent.map((c) => c.section)).size.toString(),
       iconName: "FileText",
       href: "/admin/marketing/landing",
       color: "text-violet-400",
@@ -41,7 +33,7 @@ export default async function MarketingDashboard() {
     },
     {
       title: "Testimonials",
-      value: testimonials.length,
+      value: testimonials.length.toString(),
       iconName: "Star",
       href: "/admin/marketing/testimonials",
       color: "text-amber-400",
@@ -50,7 +42,7 @@ export default async function MarketingDashboard() {
     },
     {
       title: "SEO Pages",
-      value: seoSettings.length,
+      value: seoSettings.length.toString(),
       iconName: "Search",
       href: "/admin/marketing/seo",
       color: "text-emerald-400",
@@ -59,16 +51,16 @@ export default async function MarketingDashboard() {
     },
     {
       title: "Subscribers",
-      value: subscribers.toLocaleString(),
+      value: subscribers.toString(),
       iconName: "Users",
       href: "/admin/marketing/subscribers",
-      color: "text-cyan-400",
-      bg: "bg-cyan-500/10",
-      description: "Growth in last 30d",
+      color: "text-blue-400",
+      bg: "bg-blue-400/10",
+      description: "Active subscribers",
     },
     {
       title: "Newsletters",
-      value: newsletters.length,
+      value: newsletters.length.toString(),
       iconName: "Mail",
       href: "/admin/marketing/newsletters",
       color: "text-rose-400",
@@ -88,7 +80,7 @@ export default async function MarketingDashboard() {
 
   return (
     <MarketingClient 
-      stats={stats} 
+      stats={statItems} 
       newsletters={newsletters}
     />
   );

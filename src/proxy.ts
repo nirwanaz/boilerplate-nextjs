@@ -11,7 +11,7 @@ export default async function middleware(request: NextRequest) {
     session = await auth.api.getSession({
       headers: request.headers,
     });
-  } catch (e) {
+  } catch {
     // Session check failed, continue as unauthenticated
   }
 

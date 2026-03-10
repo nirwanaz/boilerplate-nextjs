@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { transformUserToProfile } from "@/shared/auth/rbac";
-import type { UserSession } from "@/shared/types";
+import type { UserSession, Profile, Role } from "@/shared/types";
 
 /**
  * Data Access Layer: get the current authenticated user session.
@@ -41,8 +41,8 @@ export async function requireAuth(): Promise<UserSession> {
  * Note: Role-based logic should be integrated with Better Auth's custom properties or plugins.
  */
 export async function requireAuthWithRole(
-  roles: string | string[]
-): Promise<{ session: UserSession; profile: any }> {
+  roles: Role | Role[]
+): Promise<{ session: UserSession; profile: Profile }> {
   const session = await requireAuth();
   
   const userRoles = Array.isArray(roles) ? roles : [roles];

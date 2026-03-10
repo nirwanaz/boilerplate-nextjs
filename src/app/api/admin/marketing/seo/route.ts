@@ -7,7 +7,7 @@ export async function GET() {
     await requireAuthWithRole("admin");
     const seo = await marketingService.getSeoSettings();
     return NextResponse.json(seo);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const seo = await marketingService.upsertSeo(body);
     return NextResponse.json(seo);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Bad Request" }, { status: 400 });
   }
 }

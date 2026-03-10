@@ -59,7 +59,16 @@ const bottomNavItems = [
   { title: "Settings", href: "/settings", icon: Settings },
 ];
 
-const NavItem = ({ item, isActive, colorClass }: any) => {
+interface NavItemProps {
+  item: {
+    title: string;
+    href: string;
+    icon: React.ElementType;
+  };
+  isActive: boolean;
+}
+
+const NavItem = ({ item, isActive }: NavItemProps) => {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton

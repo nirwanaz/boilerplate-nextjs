@@ -23,7 +23,7 @@ export class PostRepository {
       orderBy: [desc(schema.posts.createdAt)]
     });
 
-    return data.map((post: any) => this.transformPost(post));
+    return data.map((post) => this.transformPost(post));
   }
 
   async findById(id: string): Promise<Post | null> {
@@ -81,15 +81,15 @@ export class PostRepository {
       orderBy: [desc(schema.posts.createdAt)]
     });
 
-    return data.map((post: any) => this.transformPost(post));
+    return data.map((post) => this.transformPost(post));
   }
 
   private transformCategory(data: typeof schema.categories.$inferSelect): Category {
     return {
       ...data,
       description: data.description || undefined,
-      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : (data.createdAt as any),
-      updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : (data.updatedAt as any),
+      createdAt: data.createdAt ? data.createdAt.toISOString() : "",
+      updatedAt: data.updatedAt ? data.updatedAt.toISOString() : "",
     };
   }
 
@@ -99,9 +99,9 @@ export class PostRepository {
       slug: data.slug || "",
       excerpt: data.excerpt || "",
       featuredImage: data.featuredImage || "",
-      categories: data.categories?.map((pc: any) => this.transformCategory(pc.category)).filter(Boolean) ?? [],
-      updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : data.updatedAt,
-      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : data.createdAt
+      categories: data.categories?.map((pc) => this.transformCategory(pc.category)).filter(Boolean) ?? [],
+      updatedAt: data.updatedAt ? data.updatedAt.toISOString() : "",
+      createdAt: data.createdAt ? data.createdAt.toISOString() : ""
     };
   }
 
@@ -122,7 +122,7 @@ export class PostRepository {
       slug: postData.slug!,
       excerpt: postData.excerpt,
       featuredImage: postData.featuredImage,
-      status: postData.status as any,
+      status: postData.status as "draft" | "published",
       authorId: postData.authorId,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -157,7 +157,7 @@ export class PostRepository {
     await db.update(schema.posts)
       .set({ 
         ...postData, 
-        status: postData.status as any,
+        status: postData.status as "draft" | "published",
         updatedAt: new Date() 
       })
       .where(eq(schema.posts.id, id));
