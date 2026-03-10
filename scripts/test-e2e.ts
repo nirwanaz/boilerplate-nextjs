@@ -68,7 +68,7 @@ async function runTest() {
     // If not, skip category for now or try generic selector.
     try {
         await page.click('button:has-text("Technology")');
-    } catch (e) {
+    } catch {
         console.log('⚠️ Could not select category "Technology". Skipping.');
     }
 
