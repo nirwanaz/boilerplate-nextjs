@@ -1,15 +1,15 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import { PaymentRepository } from "../repositories/payment.repository";
 import { checkoutSchema, productCheckoutSchema } from "../entities/payment";
 import type { CheckoutInput, ProductCheckoutInput, Order, OrderItem } from "../entities/payment";
 import { stripe } from "@/shared/lib/stripe/server";
 import { ProductRepository } from "@/domains/products/repositories/product.repository";
+import { getSession } from "@/shared/auth/dal";
 
 export class PaymentService {
   private repository: PaymentRepository;
 
-  constructor(private supabase: SupabaseClient) {
-    this.repository = new PaymentRepository(supabase);
+  constructor() {
+    this.repository = new PaymentRepository();
   }
 
   async listOrders(userId?: string): Promise<Order[]> {
@@ -31,13 +31,11 @@ export class PaymentService {
   ): Promise<{ url: string }> {
     const validated = checkoutSchema.parse(input);
 
-    const {
-      data: { user },
-    } = await this.supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    const sessionUser = await getSession();
+    if (!sessionUser) throw new Error("Unauthorized");
 
     const totalAmount = validated.items.reduce(
-      (sum, item) => sum + item.unit_price * item.quantity,
+      (sum, item) => sum + item.unitPrice * item.quantity,
       0
     );
 
@@ -48,22 +46,22 @@ export class PaymentService {
         price_data: {
           currency: validated.currency,
           product_data: { name: item.name },
-          unit_amount: item.unit_price,
+          unit_amount: item.unitPrice,
         },
         quantity: item.quantity,
       })),
       mode: "payment",
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { user_id: user.id },
+      metadata: { userId: sessionUser.user.id },
     });
 
     // Create order in database
     const order = await this.repository.create({
-      user_id: user.id,
+      userId: sessionUser.user.id,
       amount: totalAmount,
       currency: validated.currency,
-      stripe_session_id: session.id,
+      stripeSessionId: session.id,
       status: "pending",
     });
 
@@ -79,17 +77,15 @@ export class PaymentService {
   ): Promise<{ url: string }> {
     const validated = productCheckoutSchema.parse(input);
 
-    const {
-      data: { user },
-    } = await this.supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    const sessionUser = await getSession();
+    if (!sessionUser) throw new Error("Unauthorized");
 
     // Fetch products from database
-    const productRepo = new ProductRepository(this.supabase);
-    const productIds = validated.items.map((item) => item.product_id);
+    const productRepo = new ProductRepository();
+    const productIds = validated.items.map((item) => item.productId);
     
     const products = await Promise.all(
-      productIds.map((id) => productRepo.findById(id))
+      productIds.map((id) => productRepo.findById(id!))
     );
 
     // Validate all products exist and are active
@@ -100,16 +96,16 @@ export class PaymentService {
 
     // Build checkout items with product details
     const checkoutItems = validated.items.map((item) => {
-      const product = products.find((p) => p!.id === item.product_id)!;
+      const product = products.find((p) => p!.id === item.productId)!;
       return {
         name: product.name,
-        unit_price: product.price,
+        unitPrice: product.price,
         quantity: item.quantity,
       };
     });
 
     const totalAmount = checkoutItems.reduce(
-      (sum, item) => sum + item.unit_price * item.quantity,
+      (sum, item) => sum + item.unitPrice * item.quantity,
       0
     );
 
@@ -120,22 +116,22 @@ export class PaymentService {
         price_data: {
           currency: validated.currency,
           product_data: { name: item.name },
-          unit_amount: item.unit_price,
+          unit_amount: item.unitPrice,
         },
         quantity: item.quantity,
       })),
       mode: "payment",
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { user_id: user.id },
+      metadata: { userId: sessionUser.user.id },
     });
 
     // Create order in database
     const order = await this.repository.create({
-      user_id: user.id,
+      userId: sessionUser.user.id,
       amount: totalAmount,
       currency: validated.currency,
-      stripe_session_id: session.id,
+      stripeSessionId: session.id,
       status: "pending",
     });
 
@@ -159,12 +155,12 @@ export class PaymentService {
       throw new Error("Only paid orders can be refunded");
     }
 
-    if (!order.stripe_session_id) {
+    if (!order.stripeSessionId) {
       throw new Error("No Stripe session found for this order");
     }
 
     // Get the payment intent from the checkout session
-    const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+    const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
     const paymentIntentId = session.payment_intent as string;
 
     if (!paymentIntentId) {

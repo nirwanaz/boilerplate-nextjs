@@ -1,15 +1,14 @@
-import { createClient } from "@/shared/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getSession } from "@/shared/auth/dal";
 
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (user) {
+  if (session) {
     redirect("/dashboard");
   }
 

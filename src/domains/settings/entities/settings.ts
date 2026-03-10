@@ -4,26 +4,26 @@ export interface AppSettings {
   id: string;
   key: string;
   value: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserSettings {
   id: string;
-  user_id: string;
+  userId: string;
   theme: "light" | "dark" | "system";
   language: string;
-  email_notifications: boolean;
-  push_notifications: boolean;
-  created_at: string;
-  updated_at: string;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const updateUserSettingsSchema = z.object({
   theme: z.enum(["light", "dark", "system"]).optional(),
   language: z.string().min(2).max(10).optional(),
-  email_notifications: z.boolean().optional(),
-  push_notifications: z.boolean().optional(),
+  emailNotifications: z.boolean().optional(),
+  pushNotifications: z.boolean().optional(),
 });
 
 export const updateAppSettingsSchema = z.object({

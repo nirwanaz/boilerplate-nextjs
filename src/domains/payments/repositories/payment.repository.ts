@@ -1,99 +1,112 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
 import type { Order, OrderItem, OrderStatus, CheckoutItem } from "../entities/payment";
 
 export class PaymentRepository {
-  constructor(private supabase: SupabaseClient) {}
-
   async findAll(userId?: string): Promise<Order[]> {
-    let builder = this.supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const whereClause = userId ? eq(schema.orders.userId, userId) : undefined;
 
-    if (userId) {
-      builder = builder.eq("user_id", userId);
-    }
+    const data = await db.query.orders.findMany({
+      where: whereClause,
+      orderBy: [desc(schema.orders.createdAt)]
+    });
 
-    const { data, error } = await builder;
-    if (error) throw error;
-    return data ?? [];
+    return data.map((item: any) => this.transformOrder(item));
   }
 
   async findById(id: string): Promise<Order | null> {
-    const { data, error } = await this.supabase
-      .from("orders")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const data = await db.query.orders.findFirst({
+      where: eq(schema.orders.id, id)
+    });
 
-    if (error) throw error;
-    return data;
+    return data ? this.transformOrder(data) : null;
   }
 
   async findByStripeSession(sessionId: string): Promise<Order | null> {
-    const { data, error } = await this.supabase
-      .from("orders")
-      .select("*")
-      .eq("stripe_session_id", sessionId)
-      .single();
+    const data = await db.query.orders.findFirst({
+      where: eq(schema.orders.stripeSessionId, sessionId)
+    });
 
-    if (error && error.code !== "PGRST116") throw error;
-    return data;
+    return data ? this.transformOrder(data) : null;
   }
 
   async create(input: {
-    user_id: string;
+    userId: string;
     amount: number;
     currency: string;
-    stripe_session_id: string;
+    stripeSessionId: string;
     status: OrderStatus;
   }): Promise<Order> {
-    const { data, error } = await this.supabase
-      .from("orders")
-      .insert(input)
-      .select()
-      .single();
+    const id = crypto.randomUUID();
+    await db.insert(schema.orders).values({
+      id,
+      userId: input.userId,
+      amount: input.amount,
+      currency: input.currency,
+      stripeSessionId: input.stripeSessionId,
+      status: input.status as any,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
-    if (error) throw error;
-    return data;
+    return (await this.findById(id))!;
   }
 
   async createItems(orderId: string, items: CheckoutItem[]): Promise<OrderItem[]> {
-    const rows = items.map((item) => ({
-      order_id: orderId,
-      name: item.name,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-    }));
+    const itemIds: string[] = [];
+    
+    // Drizzle doesn't return all inserted rows with .select() on all drivers easily in a batch sometimes depending on the setup, 
+    // but Neon should support returning. However, to keep it simple and safe:
+    const values = items.map((item) => {
+      const id = crypto.randomUUID();
+      itemIds.push(id);
+      return {
+        id,
+        orderId: orderId,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        createdAt: new Date(),
+      };
+    });
 
-    const { data, error } = await this.supabase
-      .from("order_items")
-      .insert(rows)
-      .select();
+    await db.insert(schema.orderItems).values(values);
 
-    if (error) throw error;
-    return data ?? [];
+    return this.getOrderItems(orderId);
   }
 
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {
-    const { data, error } = await this.supabase
-      .from("orders")
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single();
+    await db.update(schema.orders)
+      .set({ 
+        status: status as any, 
+        updatedAt: new Date() 
+      })
+      .where(eq(schema.orders.id, id));
 
-    if (error) throw error;
-    return data;
+    return (await this.findById(id))!;
   }
 
   async getOrderItems(orderId: string): Promise<OrderItem[]> {
-    const { data, error } = await this.supabase
-      .from("order_items")
-      .select("*")
-      .eq("order_id", orderId);
+    const data = await db.query.orderItems.findMany({
+      where: eq(schema.orderItems.orderId, orderId)
+    });
 
-    if (error) throw error;
-    return data ?? [];
+    return data.map((item: any) => this.transformOrderItem(item));
+  }
+
+  private transformOrder(data: typeof schema.orders.$inferSelect): Order {
+    return {
+      ...data,
+      updatedAt: data.updatedAt.toISOString(),
+      createdAt: data.createdAt.toISOString()
+    };
+  }
+
+  private transformOrderItem(data: typeof schema.orderItems.$inferSelect): OrderItem {
+    return {
+      ...data,
+      createdAt: data.createdAt.toISOString()
+    };
   }
 }

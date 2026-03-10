@@ -28,6 +28,35 @@ interface RichTextEditorProps {
   className?: string;
 }
 
+const ToolbarButton = ({ 
+  onClick, 
+  active, 
+  disabled, 
+  children, 
+  title 
+}: { 
+  onClick: () => void; 
+  active?: boolean; 
+  disabled?: boolean; 
+  children: React.ReactNode;
+  title: string;
+}) => (
+  <Button
+    type="button"
+    variant="ghost"
+    size="icon"
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={cn(
+      "h-8 w-8 transition-colors",
+      active && "bg-muted text-foreground"
+    )}
+  >
+    {children}
+  </Button>
+);
+
 export function RichTextEditor({ 
   content, 
   onChange, 
@@ -70,35 +99,6 @@ export function RichTextEditor({
   if (!editor) {
     return null;
   }
-
-  const ToolbarButton = ({ 
-    onClick, 
-    active, 
-    disabled, 
-    children, 
-    title 
-  }: { 
-    onClick: () => void; 
-    active?: boolean; 
-    disabled?: boolean; 
-    children: React.ReactNode;
-    title: string;
-  }) => (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={cn(
-        "h-8 w-8 transition-colors",
-        active && "bg-muted text-foreground"
-      )}
-    >
-      {children}
-    </Button>
-  );
 
   const characterCount = editor.getText().length;
   const wordCount = editor.getText().trim() ? editor.getText().trim().split(/\s+/).length : 0;

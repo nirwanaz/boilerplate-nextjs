@@ -1,64 +1,68 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
 import type { Product, CreateProductInput, UpdateProductInput } from "../entities/product";
 
 export class ProductRepository {
-  constructor(private supabase: SupabaseClient) {}
-
   async findAll(activeOnly = false): Promise<Product[]> {
-    let builder = this.supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const whereClause = activeOnly ? eq(schema.products.status, "active") : undefined;
 
-    if (activeOnly) {
-      builder = builder.eq("status", "active");
-    }
+    const data = await db.query.products.findMany({
+      where: whereClause,
+      orderBy: [desc(schema.products.createdAt)]
+    });
 
-    const { data, error } = await builder;
-    if (error) throw error;
-    return data ?? [];
+    return data.map((item: any) => this.transformProduct(item));
   }
 
   async findById(id: string): Promise<Product | null> {
-    const { data, error } = await this.supabase
-      .from("products")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const data = await db.query.products.findFirst({
+      where: eq(schema.products.id, id)
+    });
 
-    if (error) throw error;
-    return data;
+    return data ? this.transformProduct(data) : null;
   }
 
   async create(input: CreateProductInput): Promise<Product> {
-    const { data, error } = await this.supabase
-      .from("products")
-      .insert(input)
-      .select()
-      .single();
+    const id = crypto.randomUUID();
+    await db.insert(schema.products).values({
+      id,
+      name: input.name,
+      description: input.description,
+      price: input.price,
+      currency: input.currency,
+      status: input.status as any,
+      imageUrl: input.imageUrl,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
-    if (error) throw error;
-    return data;
+    return (await this.findById(id))!;
   }
 
   async update(id: string, input: UpdateProductInput): Promise<Product> {
-    const { data, error } = await this.supabase
-      .from("products")
-      .update({ ...input, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single();
+    await db.update(schema.products)
+      .set({ 
+        ...input, 
+        status: input.status as any,
+        updatedAt: new Date() 
+      })
+      .where(eq(schema.products.id, id));
 
-    if (error) throw error;
-    return data;
+    return (await this.findById(id))!;
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from("products")
-      .delete()
-      .eq("id", id);
+    await db.delete(schema.products).where(eq(schema.products.id, id));
+  }
 
-    if (error) throw error;
+  private transformProduct(data: typeof schema.products.$inferSelect): Product {
+    return {
+      ...data,
+      imageUrl: data.imageUrl || null,
+      description: data.description || null,
+      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : data.createdAt,
+      updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : data.updatedAt
+    };
   }
 }

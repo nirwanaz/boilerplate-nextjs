@@ -3,16 +3,17 @@ export type Role = "admin" | "manager" | "user";
 export interface Profile {
   id: string;
   email: string;
-  full_name: string | null;
+  fullName: string | null;
   role: Role;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserSession {
   user: {
     id: string;
     email: string;
+    name: string | null;
   };
   profile: Profile;
 }

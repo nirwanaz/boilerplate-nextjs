@@ -1,17 +1,24 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import { ProductRepository } from "../repositories/product.repository";
 import { createProductSchema, updateProductSchema } from "../entities/product";
 import type { CreateProductInput, UpdateProductInput, Product } from "../entities/product";
-import { requireRole } from "@/shared/auth/rbac";
+import { hasPermission } from "@/shared/auth/rbac";
+import { getSession } from "@/shared/auth/dal";
+import { activityLogService } from "@/domains/activity-logs/services/activity-log.service";
 
 export class ProductService {
   private repository: ProductRepository;
 
-  constructor(private supabase: SupabaseClient) {
-    this.repository = new ProductRepository(supabase);
+  constructor() {
+    this.repository = new ProductRepository();
   }
 
   async list(activeOnly = false): Promise<Product[]> {
+    if (!activeOnly) {
+      const session = await getSession();
+      if (!session || !hasPermission(session.profile.role, ["admin"])) {
+        throw new Error("Forbidden");
+      }
+    }
     return this.repository.findAll(activeOnly);
   }
 
@@ -20,31 +27,62 @@ export class ProductService {
   }
 
   async create(input: CreateProductInput): Promise<Product> {
-    // Only admins can create products
-    await requireRole(this.supabase, ["admin"]);
+    const session = await getSession();
+    if (!session || !hasPermission(session.profile.role, ["admin"])) {
+      throw new Error("Forbidden");
+    }
     
     const validated = createProductSchema.parse(input);
-    return this.repository.create(validated);
+    const product = await this.repository.create(validated);
+
+    await activityLogService.record({
+      action: "CREATE_PRODUCT",
+      entityType: "product",
+      entityId: product.id,
+      details: JSON.stringify({ name: product.name }),
+    });
+
+    return product;
   }
 
   async update(id: string, input: UpdateProductInput): Promise<Product> {
-    // Only admins can update products
-    await requireRole(this.supabase, ["admin"]);
+    const session = await getSession();
+    if (!session || !hasPermission(session.profile.role, ["admin"])) {
+      throw new Error("Forbidden");
+    }
 
     const product = await this.repository.findById(id);
     if (!product) throw new Error("Product not found");
 
     const validated = updateProductSchema.parse(input);
-    return this.repository.update(id, validated);
+    const updated = await this.repository.update(id, validated);
+
+    await activityLogService.record({
+      action: "UPDATE_PRODUCT",
+      entityType: "product",
+      entityId: id,
+      details: JSON.stringify({ name: updated.name, changes: validated }),
+    });
+
+    return updated;
   }
 
   async delete(id: string): Promise<void> {
-    // Only admins can delete products
-    await requireRole(this.supabase, ["admin"]);
+    const session = await getSession();
+    if (!session || !hasPermission(session.profile.role, ["admin"])) {
+      throw new Error("Forbidden");
+    }
 
     const product = await this.repository.findById(id);
     if (!product) throw new Error("Product not found");
 
-    return this.repository.delete(id);
+    await this.repository.delete(id);
+
+    await activityLogService.record({
+      action: "DELETE_PRODUCT",
+      entityType: "product",
+      entityId: id,
+      details: JSON.stringify({ name: product.name }),
+    });
   }
 }

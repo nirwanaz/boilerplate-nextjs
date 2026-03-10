@@ -17,10 +17,10 @@ export default function ProductsPage() {
 
   function handleAddToCart(product: any) {
     addItem({
-      product_id: product.id,
+      productId: product.id,
       name: product.name,
       price: product.price,
-      image_url: product.image_url,
+      imageUrl: product.imageUrl,
     });
     toast.success(`${product.name} added to cart`);
   }
@@ -55,10 +55,10 @@ export default function ProductsPage() {
           {products?.map((product) => (
             <Card key={product.id} className="flex flex-col">
               <CardHeader className="pb-4">
-                {product.image_url && (
+                {product.imageUrl && (
                   <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden bg-muted">
                     <Image
-                      src={product.image_url}
+                      src={product.imageUrl}
                       alt={product.name}
                       fill
                       className="object-cover"

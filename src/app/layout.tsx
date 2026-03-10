@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Next.js Boilerplate",
-  description: "Fullstack Next.js 16 boilerplate with Supabase, RBAC, TanStack Query, Stripe & DDD",
+  description: "Fullstack Next.js 16 boilerplate with Better Auth, Neon DB, Drizzle ORM, RBAC, TanStack Query, Stripe & DDD",
 };
 
 import { PostHogProvider } from "@/components/analytics-provider";

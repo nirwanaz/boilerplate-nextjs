@@ -1,14 +1,14 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import { SettingsRepository } from "../repositories/settings.repository";
 import { updateUserSettingsSchema, updateAppSettingsSchema } from "../entities/settings";
 import type { AppSettings, UserSettings, UpdateUserSettingsInput, UpdateAppSettingsInput } from "../entities/settings";
-import { requireRole } from "@/shared/auth/rbac";
+import { hasPermission } from "@/shared/auth/rbac";
+import { getSession } from "@/shared/auth/dal";
 
 export class SettingsService {
   private repository: SettingsRepository;
 
-  constructor(private supabase: SupabaseClient) {
-    this.repository = new SettingsRepository(supabase);
+  constructor() {
+    this.repository = new SettingsRepository();
   }
 
   // App Settings (admin only for write)
@@ -17,22 +17,27 @@ export class SettingsService {
   }
 
   async updateAppSetting(input: UpdateAppSettingsInput): Promise<AppSettings> {
+    const session = await getSession();
+    if (!session || !hasPermission(session.profile.role, "admin")) {
+      throw new Error("Unauthorized");
+    }
+
     const validated = updateAppSettingsSchema.parse(input);
-    await requireRole(this.supabase, "admin");
     return this.repository.upsertAppSetting(validated.key, validated.value);
   }
 
   // User Settings
   async getUserSettings(): Promise<UserSettings | null> {
-    const { data: { user } } = await this.supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    return this.repository.getUserSettings(user.id);
+    const session = await getSession();
+    if (!session) throw new Error("Unauthorized");
+    return this.repository.getUserSettings(session.user.id);
   }
 
   async updateUserSettings(input: UpdateUserSettingsInput): Promise<UserSettings> {
+    const session = await getSession();
+    if (!session) throw new Error("Unauthorized");
+
     const validated = updateUserSettingsSchema.parse(input);
-    const { data: { user } } = await this.supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    return this.repository.upsertUserSettings(user.id, validated);
+    return this.repository.upsertUserSettings(session.user.id, validated);
   }
 }

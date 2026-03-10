@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/shared/lib/supabase/server";
 import { PostService } from "@/domains/posts/services/post.service";
+import { createPostSchema } from "@/domains/posts/entities/post";
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q") ?? undefined;
 
-    const service = new PostService(supabase);
+    const service = new PostService();
     const posts = await service.list(query);
 
     return NextResponse.json(posts);
@@ -20,11 +19,20 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
     const body = await request.json();
 
-    const service = new PostService(supabase);
-    const post = await service.create(body);
+    // Server-side validation
+    const parsed = createPostSchema.safeParse(body);
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      return NextResponse.json(
+        { error: "Validation failed", fields: fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const service = new PostService();
+    const post = await service.create(parsed.data);
 
     return NextResponse.json(post, { status: 201 });
   } catch (error) {

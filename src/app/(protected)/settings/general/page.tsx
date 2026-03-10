@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { siteNameSchema, type SiteNameInput } from "@/shared/lib/form-schemas";
 import { useAppSettings, useUpdateAppSettings } from "@/domains/settings/hooks/use-settings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,21 +17,30 @@ export default function GeneralSettingsPage() {
   const { data: settings, isLoading } = useAppSettings();
   const updateSetting = useUpdateAppSettings();
 
-  const [siteName, setSiteName] = useState("");
-  const [initialized, setInitialized] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<SiteNameInput>({
+    resolver: zodResolver(siteNameSchema),
+    defaultValues: { siteName: "" },
+  });
 
-  if (settings && !initialized) {
-    const nameVal = settings.find((s) => s.key === "site_name");
-    if (nameVal) setSiteName(nameVal.value);
-    setInitialized(true);
-  }
+  useEffect(() => {
+    if (settings) {
+      const nameVal = settings.find((s) => s.key === "site_name");
+      if (nameVal) {
+        reset({ siteName: nameVal.value });
+      }
+    }
+  }, [settings, reset]);
 
   const maintenanceMode = settings?.find((s) => s.key === "maintenance_mode")?.value === "true";
 
-  async function handleSaveName(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(data: SiteNameInput) {
     try {
-      await updateSetting.mutateAsync({ key: "site_name", value: siteName });
+      await updateSetting.mutateAsync({ key: "site_name", value: data.siteName });
       toast.success("Site name updated!");
     } catch {
       toast.error("Failed to update site name");
@@ -62,18 +74,21 @@ export default function GeneralSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSaveName} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="siteName">Site Name</Label>
+              <Label htmlFor="siteName">Site Name *</Label>
               <Input
                 id="siteName"
-                value={siteName}
-                onChange={(e) => setSiteName(e.target.value)}
+                {...register("siteName")}
                 placeholder="My App"
+                aria-invalid={!!errors.siteName}
               />
+              {errors.siteName && (
+                <p className="text-xs text-rose-400">{errors.siteName.message}</p>
+              )}
             </div>
-            <Button type="submit" disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
                 <Save className="h-4 w-4 mr-2" />

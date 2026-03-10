@@ -91,7 +91,7 @@ export default function OrderDetailPage({
             <div>
               <span className="text-muted-foreground">Date</span>
               <p className="font-medium">
-                {new Date(order.created_at).toLocaleString()}
+                {new Date(order.createdAt).toLocaleString()}
               </p>
             </div>
           </div>
@@ -109,15 +109,15 @@ export default function OrderDetailPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((item: { id: string; name: string; quantity: number; unit_price: number }) => (
+                  {items.map((item: { id: string; name: string; quantity: number; unitPrice: number }) => (
                     <TableRow key={item.id}>
                       <TableCell>{item.name}</TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
                       <TableCell className="text-right">
-                        ${(item.unit_price / 100).toFixed(2)}
+                        ${(item.unitPrice / 100).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        ${((item.unit_price * item.quantity) / 100).toFixed(2)}
+                        ${((item.unitPrice * item.quantity) / 100).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/domains/products/hooks/use-products";
+import { createProductSchema, type CreateProductInput, type Product } from "@/domains/products/entities/product";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,8 +45,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
-import type { Product, CreateProductInput } from "@/domains/products/entities/product";
+import { Loader2, Plus, Pencil, Trash2, Package } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function AdminProductsPage() {
   const { data: products, isLoading } = useProducts();
@@ -55,50 +58,59 @@ export default function AdminProductsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
-  
-  const [formData, setFormData] = useState<CreateProductInput>({
-    name: "",
-    description: "",
-    price: 0,
-    currency: "usd",
-    status: "active",
-    image_url: "",
-  });
 
-  function openCreateDialog() {
-    setEditingProduct(null);
-    setFormData({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateProductInput>({
+    resolver: zodResolver(createProductSchema),
+    defaultValues: {
       name: "",
       description: "",
       price: 0,
       currency: "usd",
       status: "active",
-      image_url: "",
+      imageUrl: "",
+    },
+  });
+
+  function openCreateDialog() {
+    setEditingProduct(null);
+    reset({
+      name: "",
+      description: "",
+      price: 0,
+      currency: "usd",
+      status: "active",
+      imageUrl: "",
     });
     setDialogOpen(true);
   }
 
   function openEditDialog(product: Product) {
     setEditingProduct(product);
-    setFormData({
+    reset({
       name: product.name,
       description: product.description || "",
       price: product.price,
       currency: product.currency,
       status: product.status,
-      image_url: product.image_url || "",
+      imageUrl: product.imageUrl || "",
     });
     setDialogOpen(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(data: CreateProductInput) {
     try {
       if (editingProduct) {
-        await updateProduct.mutateAsync({ id: editingProduct.id, input: formData });
+        await updateProduct.mutateAsync({ id: editingProduct.id, input: data });
         toast.success("Product updated successfully");
       } else {
-        await createProduct.mutateAsync(formData);
+        await createProduct.mutateAsync(data);
         toast.success("Product created successfully");
       }
       setDialogOpen(false);
@@ -119,83 +131,124 @@ export default function AdminProductsPage() {
     }
   }
 
+  const watchStatus = watch("status");
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <p className="text-muted-foreground mt-1">Manage your product catalog</p>
+          <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
+            Inventory <span className="text-slate-500 underline decoration-white/10 decoration-2 underline-offset-8">Suite</span>
+          </h1>
+          <p className="text-slate-500 font-medium">Manage your product catalog with precision.</p>
         </div>
-        <Button onClick={openCreateDialog}>
+        <Button
+          onClick={openCreateDialog}
+          className="bg-white text-black hover:bg-slate-200 font-bold px-8 h-12 rounded-xl transition-all shadow-xl shadow-white/10"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Product
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Products</CardTitle>
-          <CardDescription>Complete product inventory</CardDescription>
+      <Card className="bg-slate-900/40 border-white/[0.05] shadow-sm rounded-3xl overflow-hidden">
+        <CardHeader className="p-8 border-b border-white/[0.05] flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-black text-white tracking-tight">Active Stock</CardTitle>
+            <CardDescription className="text-slate-500 font-medium uppercase text-[10px] tracking-widest mt-1">
+              Real-time available items
+            </CardDescription>
+          </div>
+          <Badge variant="outline" className="bg-white/[0.03] border-white/10 text-slate-400 font-bold px-4 py-1.5 rounded-lg uppercase text-[10px] tracking-widest">
+            {products?.length || 0} Total Units
+          </Badge>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-40">
+              <Loader2 className="h-10 w-10 animate-spin text-slate-700" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="border-white/[0.05] hover:bg-transparent">
+                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px] py-6 pl-8">Identity</TableHead>
+                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px] py-6">Pricing</TableHead>
+                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px] py-6">Status</TableHead>
+                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px] py-6">Registered</TableHead>
+                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px] py-6 pr-8 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {products?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      No products yet. Add your first product!
+                    <TableCell colSpan={5} className="text-center py-32">
+                      <div className="flex flex-col items-center justify-center gap-6 opacity-30">
+                        <Package className="h-14 w-14 text-slate-400" />
+                        <div className="space-y-1">
+                          <p className="text-xl font-black text-white uppercase tracking-tighter">Inventory Empty</p>
+                          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">No products detected in system</p>
+                        </div>
+                        <Button variant="outline" onClick={openCreateDialog} className="mt-4 border-white/10 text-slate-300 font-bold rounded-xl">
+                          INITIALIZE CATALOG
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   products?.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>
-                        ${(product.price / 100).toFixed(2)}{" "}
-                        <span className="text-muted-foreground uppercase text-xs">
-                          {product.currency}
-                        </span>
+                    <TableRow key={product.id} className="border-white/[0.05] hover:bg-white/[0.02] transition-colors group">
+                      <TableCell className="py-6 pl-8">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-xl bg-slate-950 border border-white/[0.05] flex items-center justify-center font-bold text-lg text-white overflow-hidden shadow-inner group-hover:border-white/10 transition-colors">
+                            {product.imageUrl ? (
+                              <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                            ) : (
+                              product.name[0].toUpperCase()
+                            )}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-bold text-white text-base tracking-tight truncate max-w-[240px]">
+                              {product.name}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-widest mt-0.5 truncate max-w-[240px]">
+                              {product.description || "No description"}
+                            </span>
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={product.status === "active" ? "default" : "secondary"}>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-white text-lg tracking-tighter">
+                            ${(product.price / 100).toFixed(2)}
+                          </span>
+                          <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+                            {product.currency}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={cn(
+                            "uppercase text-[9px] font-bold tracking-widest px-2.5 py-1 rounded-md border-none",
+                            product.status === "active" ? "bg-emerald-500/10 text-emerald-500" : "bg-slate-800 text-slate-500"
+                          )}
+                        >
                           {product.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(product.created_at).toLocaleDateString()}
+                      <TableCell className="text-slate-600 font-bold text-[10px] uppercase tracking-widest">
+                        {new Date(product.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(product)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setDeletingProduct(product);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-right pr-8">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/[0.05] hover:text-white transition-all" onClick={() => openEditDialog(product)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-rose-500/10 hover:text-rose-500 transition-all" onClick={() => { setDeletingProduct(product); setDeleteDialogOpen(true); }}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -206,126 +259,125 @@ export default function AdminProductsPage() {
         </CardContent>
       </Card>
 
+      {/* Product Form Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-slate-950 border-white/10 rounded-3xl">
           <DialogHeader>
-            <DialogTitle>{editingProduct ? "Edit Product" : "Create Product"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-black text-white tracking-tight">{editingProduct ? "Edit Product" : "Create Product"}</DialogTitle>
+            <DialogDescription className="text-slate-500">
               {editingProduct ? "Update product details" : "Add a new product to your catalog"}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name" className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Name *</Label>
               <Input
                 id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+                {...register("name")}
+                aria-invalid={!!errors.name}
+                className={cn("bg-slate-900 border-white/5 rounded-xl h-12 focus:ring-0 focus:border-white/20 transition-all", errors.name && "border-rose-500/50")}
               />
+              {errors.name && <p className="text-xs text-rose-400">{errors.name.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Description</Label>
               <Textarea
                 id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                {...register("description")}
                 rows={3}
+                className="bg-slate-900 border-white/5 rounded-xl focus:ring-0 focus:border-white/20 transition-all"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Price (cents)</Label>
+                <Label htmlFor="price" className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Price (cents) *</Label>
                 <Input
                   id="price"
                   type="number"
                   min="0"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
-                  required
+                  {...register("price", { valueAsNumber: true })}
+                  aria-invalid={!!errors.price}
+                  className={cn("bg-slate-900 border-white/5 rounded-xl h-12", errors.price && "border-rose-500/50")}
                 />
+                {errors.price && <p className="text-xs text-rose-400">{errors.price.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency" className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Currency *</Label>
                 <Input
                   id="currency"
-                  value={formData.currency}
-                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  {...register("currency")}
                   maxLength={3}
-                  required
+                  aria-invalid={!!errors.currency}
+                  className={cn("bg-slate-900 border-white/5 rounded-xl h-12", errors.currency && "border-rose-500/50")}
                 />
+                {errors.currency && <p className="text-xs text-rose-400">{errors.currency.message}</p>}
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status" className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status</Label>
               <Select
-                value={formData.status}
-                onValueChange={(value: "active" | "inactive") =>
-                  setFormData({ ...formData, status: value })
-                }
+                value={watchStatus}
+                onValueChange={(value: "active" | "inactive") => setValue("status", value)}
               >
-                <SelectTrigger id="status">
+                <SelectTrigger id="status" className="bg-slate-900 border-white/5 rounded-xl h-12">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-slate-900 border-white/10">
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image_url">Image URL (optional)</Label>
+              <Label htmlFor="imageUrl" className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Image URL</Label>
               <Input
-                id="image_url"
+                id="imageUrl"
                 type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                {...register("imageUrl")}
                 placeholder="https://example.com/image.jpg"
+                aria-invalid={!!errors.imageUrl}
+                className={cn("bg-slate-900 border-white/5 rounded-xl h-12", errors.imageUrl && "border-rose-500/50")}
               />
+              {errors.imageUrl && <p className="text-xs text-rose-400">{errors.imageUrl.message}</p>}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+            <DialogFooter className="flex gap-3">
+              <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} className="h-12 rounded-xl font-bold uppercase text-[10px] tracking-widest text-slate-500">
                 Cancel
               </Button>
-              <Button type="submit" disabled={createProduct.isPending || updateProduct.isPending}>
-                {createProduct.isPending || updateProduct.isPending ? (
+              <Button type="submit" disabled={isSubmitting} className="bg-white text-black hover:bg-slate-200 h-12 rounded-xl px-10 font-bold uppercase text-[10px] tracking-widest transition-all">
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Saving...
                   </>
-                ) : editingProduct ? (
-                  "Update"
-                ) : (
-                  "Create"
-                )}
+                ) : editingProduct ? "Update" : "Create"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-slate-950 border-white/10 rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-2xl font-black text-white tracking-tight">Confirm Delete</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500">
               This will permanently delete <strong>{deletingProduct?.name}</strong>. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletingProduct(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex gap-3">
+            <AlertDialogCancel onClick={() => setDeletingProduct(null)} className="h-12 rounded-xl font-bold uppercase text-[10px] tracking-widest border-white/10 text-slate-500">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-rose-500 text-white hover:bg-rose-600 h-12 rounded-xl px-10 font-bold uppercase text-[10px] tracking-widest transition-all"
             >
               {deleteProduct.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Deleting...
                 </>
-              ) : (
-                "Delete"
-              )}
+              ) : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

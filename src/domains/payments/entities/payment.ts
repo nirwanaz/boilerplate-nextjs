@@ -4,28 +4,28 @@ export type OrderStatus = "pending" | "paid" | "failed" | "refunded";
 
 export interface Order {
   id: string;
-  user_id: string;
+  userId: string;
   amount: number;
   currency: string;
   status: OrderStatus;
-  stripe_session_id: string | null;
-  created_at: string;
-  updated_at: string;
+  stripeSessionId: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface OrderItem {
   id: string;
-  order_id: string;
+  orderId: string;
   name: string;
   quantity: number;
-  unit_price: number;
-  created_at: string;
+  unitPrice: number;
+  createdAt: string;
 }
 
 export interface CheckoutItem {
   name: string;
   quantity: number;
-  unit_price: number; // in cents
+  unitPrice: number; // in cents
 }
 
 // Manual checkout with custom items
@@ -34,7 +34,7 @@ export const checkoutSchema = z.object({
     z.object({
       name: z.string().min(1),
       quantity: z.number().int().positive(),
-      unit_price: z.number().int().positive(),
+      unitPrice: z.number().int().positive(),
     })
   ).min(1, "At least one item is required"),
   currency: z.string().length(3).default("usd"),
@@ -44,7 +44,7 @@ export const checkoutSchema = z.object({
 export const productCheckoutSchema = z.object({
   items: z.array(
     z.object({
-      product_id: z.string().uuid(),
+      productId: z.string().uuid(),
       quantity: z.number().int().positive(),
     })
   ).min(1, "At least one item is required"),

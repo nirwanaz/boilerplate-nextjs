@@ -11,12 +11,12 @@ export default function NotificationsSettingsPage() {
   const { data: settings, isLoading } = useUserSettings();
   const updateSettings = useUpdateUserSettings();
 
-  async function handleToggle(key: "email_notifications" | "push_notifications", value: boolean) {
+  async function handleToggle(key: "emailNotifications" | "pushNotifications", value: boolean) {
     try {
       await updateSettings.mutateAsync({ [key]: value });
-      toast.success("Notification preference updated");
-    } catch {
-      toast.error("Failed to update notifications");
+      toast.success("Settings updated");
+    } catch (err) {
+      toast.error("Failed to update settings");
     }
   }
 
@@ -33,7 +33,7 @@ export default function NotificationsSettingsPage() {
       <CardHeader>
         <CardTitle>Notifications</CardTitle>
         <CardDescription>
-          Configure how you receive notifications
+          Configure how you want to receive updates
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -41,12 +41,12 @@ export default function NotificationsSettingsPage() {
           <div className="space-y-0.5">
             <Label>Email Notifications</Label>
             <p className="text-sm text-muted-foreground">
-              Receive notifications via email
+              Receive updates about your account via email
             </p>
           </div>
           <Switch
-            checked={settings?.email_notifications ?? true}
-            onCheckedChange={(checked) => handleToggle("email_notifications", checked)}
+            checked={settings?.emailNotifications ?? true}
+            onCheckedChange={(checked) => handleToggle("emailNotifications", checked)}
             disabled={updateSettings.isPending}
           />
         </div>
@@ -55,12 +55,12 @@ export default function NotificationsSettingsPage() {
           <div className="space-y-0.5">
             <Label>Push Notifications</Label>
             <p className="text-sm text-muted-foreground">
-              Receive push notifications in browser
+              Receive real-time updates in your browser
             </p>
           </div>
           <Switch
-            checked={settings?.push_notifications ?? false}
-            onCheckedChange={(checked) => handleToggle("push_notifications", checked)}
+            checked={settings?.pushNotifications ?? true}
+            onCheckedChange={(checked) => handleToggle("pushNotifications", checked)}
             disabled={updateSettings.isPending}
           />
         </div>

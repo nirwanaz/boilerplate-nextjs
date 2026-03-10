@@ -1,10 +1,9 @@
 
-import { createClient } from "@/shared/lib/supabase/server";
 import { PostRepository } from "@/domains/posts/repositories/post.repository";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Calendar, User } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 export const metadata = {
   title: "Blog - Latest Updates",
@@ -12,8 +11,7 @@ export const metadata = {
 };
 
 export default async function BlogIndexPage() {
-  const supabase = await createClient();
-  const repo = new PostRepository(supabase);
+  const repo = new PostRepository();
   const posts = await repo.findPublished();
 
   return (
@@ -36,9 +34,9 @@ export default async function BlogIndexPage() {
           {posts.map((post) => (
             <Card key={post.id} className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow duration-300 border-none bg-card/50 backdrop-blur-sm">
               <Link href={`/blog/${post.slug || post.id}`} className="block aspect-video relative bg-muted group overflow-hidden">
-                {post.featured_image ? (
+                {post.featuredImage ? (
                   <img
-                    src={post.featured_image}
+                    src={post.featuredImage}
                     alt={post.title}
                     className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
                   />
@@ -73,17 +71,12 @@ export default async function BlogIndexPage() {
               <CardFooter className="p-5 pt-0 text-xs text-muted-foreground flex items-center gap-4 mt-auto">
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  <span>{new Date(post.created_at).toLocaleDateString(undefined, {
+                  <span>{new Date(post.createdAt).toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
                   })}</span>
                 </div>
-                {/* Placeholder for author if available in future */}
-                {/* <div className="flex items-center gap-1">
-                  <User className="w-3 h-3" />
-                  <span>Admin</span>
-                </div> */}
               </CardFooter>
             </Card>
           ))}

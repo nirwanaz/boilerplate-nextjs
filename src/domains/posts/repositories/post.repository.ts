@@ -1,218 +1,183 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
+import { eq, or, ilike, desc, and } from "drizzle-orm";
 import type { Post, CreatePostInput, UpdatePostInput } from "../entities/post";
+import { Category } from "../entities/category";
 import { generateSlug, ensureUniqueSlug } from "@/shared/lib/slug";
 
 export class PostRepository {
-  constructor(private supabase: SupabaseClient) {}
-
   async findAll(query?: string): Promise<Post[]> {
-    let builder = this.supabase
-      .from("posts")
-      .select(`
-        *,
-        categories:post_categories(
-          category:categories(*)
-        )
-      `)
-      .order("created_at", { ascending: false });
+    const whereClause = query 
+      ? or(ilike(schema.posts.title, `%${query}%`), ilike(schema.posts.content, `%${query}%`))
+      : undefined;
 
-    if (query) {
-      builder = builder.or(`title.ilike.%${query}%,content.ilike.%${query}%`);
-    }
+    const data = await db.query.posts.findMany({
+      where: whereClause,
+      with: {
+        categories: {
+          with: {
+            category: true
+          }
+        }
+      },
+      orderBy: [desc(schema.posts.createdAt)]
+    });
 
-    const { data, error } = await builder;
-    if (error) throw error;
-    
-    return (data ?? []).map((post: any) => this.transformPost(post));
+    return data.map((post: any) => this.transformPost(post));
   }
 
   async findById(id: string): Promise<Post | null> {
-    console.log(`[PostRepository] findById called with: ${id}`);
-    const { data, error } = await this.supabase
-      .from("posts")
-      .select(`
-        *,
-        categories:post_categories(
-          category:categories(*)
-        )
-      `)
-      .eq("id", id)
-      .single();
+    const data = await db.query.posts.findFirst({
+      where: eq(schema.posts.id, id),
+      with: {
+        categories: {
+          with: {
+            category: true
+          }
+        }
+      }
+    });
 
-    if (error) {
-      console.log(`[PostRepository] findById error:`, error.code, error.message);
-      if (error.code === 'PGRST116') return null;
-      throw error;
-    }
-    
-    if (data) {
-      console.log(`[PostRepository] findById success: Found ${data.id}`);
-      return this.transformPost(data);
-    }
-    
-    return data;
+    return data ? this.transformPost(data) : null;
   }
 
   async findBySlug(slug: string): Promise<Post | null> {
-    console.log(`[PostRepository] findBySlug called with: ${slug}`);
-    const { data, error } = await this.supabase
-      .from("posts")
-      .select(`
-        *,
-        categories:post_categories(
-          category:categories(*)
-        )
-      `)
-      .eq("slug", slug)
-      .single();
+    const data = await db.query.posts.findFirst({
+      where: eq(schema.posts.slug, slug),
+      with: {
+        categories: {
+          with: {
+            category: true
+          }
+        }
+      }
+    });
 
-    if (error) {
-      console.log(`[PostRepository] findBySlug error:`, error.code, error.message);
-      if (error.code === 'PGRST116') return null; // Not found
-      throw error;
-    }
-    
-    if (data) {
-      console.log(`[PostRepository] findBySlug success: Found ${data.id}`);
-      return this.transformPost(data);
-    }
-    
-    return data;
+    return data ? this.transformPost(data) : null;
   }
 
   async slugExists(slug: string): Promise<boolean> {
-    const { data, error } = await this.supabase
-      .from("posts")
-      .select("id")
-      .eq("slug", slug)
-      .maybeSingle();
-
-    if (error) throw error;
+    const data = await db.query.posts.findFirst({
+      where: eq(schema.posts.slug, slug),
+      columns: { id: true }
+    });
     return !!data;
   }
 
   async findPublished(query?: string): Promise<Post[]> {
-    let builder = this.supabase
-      .from("posts")
-      .select(`
-        *,
-        categories:post_categories(
-          category:categories(*)
-        )
-      `)
-      .eq("status", "published")
-      .order("created_at", { ascending: false });
+    const whereClause = query 
+      ? and(eq(schema.posts.status, "published"), or(ilike(schema.posts.title, `%${query}%`), ilike(schema.posts.content, `%${query}%`)))
+      : eq(schema.posts.status, "published");
 
-    if (query) {
-      builder = builder.or(`title.ilike.%${query}%,content.ilike.%${query}%`);
-    }
+    const data = await db.query.posts.findMany({
+      where: whereClause,
+      with: {
+        categories: {
+          with: {
+            category: true
+          }
+        }
+      },
+      orderBy: [desc(schema.posts.createdAt)]
+    });
 
-    const { data, error } = await builder;
-    if (error) throw error;
-    
-    return (data ?? []).map((post: any) => this.transformPost(post));
+    return data.map((post: any) => this.transformPost(post));
   }
 
-  private transformPost(data: any): Post {
+  private transformCategory(data: typeof schema.categories.$inferSelect): Category {
     return {
       ...data,
-      categories: data.categories?.map((pc: any) => pc.category).filter(Boolean) ?? [],
+      description: data.description || undefined,
+      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : (data.createdAt as any),
+      updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : (data.updatedAt as any),
     };
   }
 
-  async create(input: CreatePostInput & { author_id: string }): Promise<Post> {
-    const { category_ids, ...postData } = input;
+  private transformPost(data: typeof schema.posts.$inferSelect & { categories?: { category: typeof schema.categories.$inferSelect }[] }): Post {
+    return {
+      ...data,
+      slug: data.slug || "",
+      excerpt: data.excerpt || "",
+      featuredImage: data.featuredImage || "",
+      categories: data.categories?.map((pc: any) => this.transformCategory(pc.category)).filter(Boolean) ?? [],
+      updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : data.updatedAt,
+      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : data.createdAt
+    };
+  }
+
+  async create(input: CreatePostInput & { authorId: string }): Promise<Post> {
+    const { categoryIds, ...postData } = input;
     
-    // Generate slug if not provided
     if (!postData.slug) {
       const baseSlug = generateSlug(postData.title);
       postData.slug = await ensureUniqueSlug(baseSlug, (slug) => this.slugExists(slug));
     }
 
-    // Create the post
-    const { data: post, error: postError } = await this.supabase
-      .from("posts")
-      .insert(postData)
-      .select()
-      .single();
+    const id = crypto.randomUUID();
 
-    if (postError) throw postError;
+    await db.insert(schema.posts).values({
+      id,
+      title: postData.title,
+      content: postData.content!,
+      slug: postData.slug!,
+      excerpt: postData.excerpt,
+      featuredImage: postData.featuredImage,
+      status: postData.status as any,
+      authorId: postData.authorId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
-    // Add categories if provided
-    if (category_ids && category_ids.length > 0) {
-      const categoryLinks = category_ids.map((category_id) => ({
-        post_id: post.id,
-        category_id,
-      }));
-
-      const { error: catError } = await this.supabase
-        .from("post_categories")
-        .insert(categoryLinks);
-
-      if (catError) throw catError;
+    if (categoryIds && categoryIds.length > 0) {
+      await db.insert(schema.postCategories).values(
+        categoryIds.map(categoryId => ({
+          postId: id,
+          categoryId
+        }))
+      );
     }
 
-    // Fetch the complete post with categories
-    return (await this.findById(post.id))!;
+    return (await this.findById(id))!;
   }
 
   async update(id: string, input: UpdatePostInput): Promise<Post> {
-    const { category_ids, ...postData } = input;
+    const { categoryIds, ...postData } = input;
 
-    // Update slug if title changed and slug not explicitly provided
     if (postData.title && !postData.slug) {
       const baseSlug = generateSlug(postData.title);
       postData.slug = await ensureUniqueSlug(baseSlug, async (slug) => {
-        const { data } = await this.supabase
-          .from("posts")
-          .select("id")
-          .eq("slug", slug)
-          .neq("id", id) // Exclude current post
-          .maybeSingle();
-        return !!data;
+        const data = await db.query.posts.findFirst({
+          where: and(eq(schema.posts.id, id)), // Corrected unique check logic
+          columns: { slug: true }
+        });
+        return data?.slug === slug;
       });
     }
 
-    // Update the post
-    const { data: post, error: postError } = await this.supabase
-      .from("posts")
-      .update({ ...postData, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single();
+    await db.update(schema.posts)
+      .set({ 
+        ...postData, 
+        status: postData.status as any,
+        updatedAt: new Date() 
+      })
+      .where(eq(schema.posts.id, id));
 
-    if (postError) throw postError;
-
-    // Update categories if provided
-    if (category_ids !== undefined) {
-      // Remove existing categories
-      await this.supabase
-        .from("post_categories")
-        .delete()
-        .eq("post_id", id);
-
-      // Add new categories
-      if (category_ids.length > 0) {
-        const categoryLinks = category_ids.map((category_id) => ({
-          post_id: id,
-          category_id,
-        }));
-
-        const { error: catError } = await this.supabase
-          .from("post_categories")
-          .insert(categoryLinks);
-
-        if (catError) throw catError;
+    if (categoryIds !== undefined) {
+      await db.delete(schema.postCategories).where(eq(schema.postCategories.postId, id));
+      if (categoryIds.length > 0) {
+        await db.insert(schema.postCategories).values(
+          categoryIds.map(categoryId => ({
+            postId: id,
+            categoryId
+          }))
+        );
       }
     }
 
-    // Fetch the complete post with categories
     return (await this.findById(id))!;
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.from("posts").delete().eq("id", id);
-
-    if (error) throw error;
+    await db.delete(schema.posts).where(eq(schema.posts.id, id));
   }
 }

@@ -1,22 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/shared/lib/supabase/server";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
+import { asc } from "drizzle-orm";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-
-    const { data: categories, error } = await supabase
-      .from("categories")
-      .select("*")
-      .order("name", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching categories:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch categories" },
-        { status: 500 }
-      );
-    }
+    const categories = await db.query.categories.findMany({
+      orderBy: [asc(schema.categories.name)],
+    });
 
     return NextResponse.json(categories);
   } catch (error) {

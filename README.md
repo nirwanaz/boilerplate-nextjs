@@ -1,11 +1,13 @@
 # Next.js 16 Fullstack Boilerplate
 
-A production-ready fullstack boilerplate built with **Next.js 16**, **Supabase**, **Stripe**, and **shadcn/ui** — organized with Domain-Driven Design (DDD).
+A production-ready fullstack boilerplate built with **Next.js 16**, **Better Auth**, **Neon (PostgreSQL)**, **Stripe**, and **shadcn/ui** — organized with Domain-Driven Design (DDD).
 
 ## ✨ Features
 
-- **Next.js 16** — App Router, React Compiler, Turbopack, `proxy.ts`
-- **Supabase** — Auth (email/password, OAuth), PostgreSQL database with RLS
+- **Next.js 16** — App Router, React Compiler, Turbopack
+- **Better Auth** — Modular, type-safe authentication with database sessions
+- **Neon DB** — Serverless PostgreSQL database
+- **Drizzle ORM** — Type-safe ORM for PostgreSQL
 - **Role-Based Access Control** — Admin / Manager / User with role hierarchy
 - **TanStack Query** — Server state management with caching
 - **shadcn/ui** — Beautiful, accessible UI components
@@ -37,31 +39,29 @@ src/
 ├── domains/                   # DDD bounded contexts
 │   ├── posts/                 # Post management domain
 │   │   ├── entities/          # Types + Zod schemas
-│   │   ├── repositories/      # Data access
+│   │   ├── repositories/      # Drizzle data access
 │   │   ├── services/          # Business logic
 │   │   └── hooks/             # TanStack Query hooks
 │   ├── settings/              # Settings domain
 │   └── payments/              # Stripe payments domain
 ├── shared/                    # Cross-cutting concerns
-│   ├── auth/                  # DAL + RBAC utilities
+│   ├── auth/                  # Better Auth Client, DAL + RBAC utilities
 │   ├── components/            # Shared UI components
 │   ├── hooks/                 # Shared hooks (debounce, etc.)
 │   ├── lib/                   # Client libraries
-│   │   ├── supabase/          # Browser, server, proxy clients
 │   │   └── stripe/            # Server + client Stripe
 │   └── types/                 # Global type definitions
-└── proxy.ts                   # Next.js 16 proxy (replaces middleware)
-
-supabase/
-└── migrations/                # SQL migrations with RLS policies
+└── lib/                       # Core library config
+    ├── db/                    # Drizzle DB & Schema
+    └── auth.ts                # Better Auth Server config
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- Supabase project ([supabase.com](https://supabase.com))
+- Node.js 22 LTS (Required by Better Auth)
+- Neon Database project ([neon.tech](https://neon.tech))
 - Stripe account ([stripe.com](https://stripe.com)) — for payments
 
 ### Setup
@@ -83,8 +83,9 @@ cp .env.example .env.local
 Fill in your `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+DATABASE_URL=postgresql://...
+BETTER_AUTH_SECRET=your_secret
+BETTER_AUTH_URL=http://localhost:3000
 
 STRIPE_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
@@ -106,12 +107,10 @@ SENTRY_AUTH_TOKEN=sntry_...
 NEXT_PUBLIC_SENTRY_DSN=https://...
 ```
 
-3. **Run database migrations:**
-
-Apply the SQL files in `supabase/migrations/` in order via the Supabase SQL Editor or CLI:
+3. **Push database schema:**
 
 ```bash
-supabase db push
+npx drizzle-kit push
 ```
 
 4. **Start development server:**
@@ -132,22 +131,21 @@ Open [http://localhost:3000](http://localhost:3000).
 | `manager` | Manage all posts, limited admin features |
 | `user` | Own content, personal settings, orders |
 
-### Next.js 16 Auth Pattern
+### Auth Pattern
 
-- **`proxy.ts`** — Session refresh + route redirects only (no auth logic)
-- **Data Access Layer (`dal.ts`)** — `requireAuth()` and `requireAuthWithRole()` for server-side auth checks
-- **RBAC (`rbac.ts`)** — Role hierarchy validation
+- **Data Access Layer (`dal.ts`)** — `getSession()` and `requireAuthWithRole()` for server-side auth checks using Better Auth.
+- **RBAC (`rbac.ts`)** — Role hierarchy validation.
 
 To protect a server component:
 
 ```tsx
-import { requireAuth, requireAuthWithRole } from "@/shared/auth/dal";
+import { getSession, requireAuthWithRole } from "@/shared/auth/dal";
 
 // Any authenticated user
-const session = await requireAuth();
+const session = await getSession();
 
 // Admin only
-const { session, profile } = await requireAuthWithRole("admin");
+await requireAuthWithRole("admin");
 ```
 
 ## 📦 DDD: Adding a New Domain
@@ -156,15 +154,15 @@ const { session, profile } = await requireAuthWithRole("admin");
 
 ```
 src/domains/your-domain/
-├── entities/        # Types + Zod schemas
-├── repositories/    # Supabase data access
+├── entities/        # Types (camelCase) + Zod schemas
+├── repositories/    # Drizzle data access
 ├── services/        # Business logic + validation
 └── hooks/           # TanStack Query hooks
 ```
 
 2. Create API routes in `src/app/api/your-domain/`
 3. Create pages in `src/app/(protected)/your-domain/`
-4. Add SQL migration in `supabase/migrations/`
+4. Update Drizzle schema in `src/lib/db/schema.ts` and run `npx drizzle-kit push`
 
 ## 💳 Stripe Integration
 
@@ -174,7 +172,7 @@ The boilerplate includes a complete Stripe Checkout flow:
 
 1. **Checkout API** (`/api/payments/checkout`) — Creates a Stripe session
 2. **Webhook** (`/api/payments/webhook`) — Handles `checkout.session.completed`
-3. **Order tracking** — Persisted in Supabase with status updates
+3. **Order tracking** — Persisted in Neon with status updates
 4. **Admin dashboard** — Revenue stats + order history at `/admin/payments`
 
 ### Stripe Setup
@@ -190,8 +188,9 @@ stripe listen --forward-to localhost:3000/api/payments/webhook
 |---------------------|--------------------------------------|
 | Next.js 16 | Framework (App Router, Turbopack) |
 | React 19.2 | UI library |
-| TypeScript | Type safety |
-| Supabase | Auth + PostgreSQL database |
+| Better Auth | Modular, type-safe authentication |
+| Neon DB | Serverless PostgreSQL database |
+| Drizzle ORM | Type-safe Database ORM |
 | TanStack Query | Server state management |
 | shadcn/ui | UI component library |
 | Stripe | Payment processing |

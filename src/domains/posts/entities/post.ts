@@ -6,11 +6,11 @@ export interface Post {
   slug: string;
   content: string;
   excerpt?: string;
-  featured_image?: string;
-  author_id: string;
+  featuredImage?: string | null;
+  authorId: string;
   status: "draft" | "published";
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   categories?: Category[];
 }
 
@@ -18,9 +18,9 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const createPostSchema = z.object({
@@ -28,9 +28,9 @@ export const createPostSchema = z.object({
   slug: z.string().min(1).max(255).optional(), // Auto-generated if not provided
   content: z.string().min(1, "Content is required"),
   excerpt: z.string().max(500).optional(),
-  featured_image: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  status: z.enum(["draft", "published"]).default("draft"),
-  category_ids: z.array(z.string().uuid()).optional().default([]),
+  featuredImage: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  status: z.enum(["draft", "published"]),
+  categoryIds: z.array(z.string().uuid()).optional(),
 });
 
 export const updatePostSchema = z.object({
@@ -38,9 +38,9 @@ export const updatePostSchema = z.object({
   slug: z.string().min(1).max(255).optional(),
   content: z.string().min(1).optional(),
   excerpt: z.string().max(500).optional(),
-  featured_image: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  featuredImage: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   status: z.enum(["draft", "published"]).optional(),
-  category_ids: z.array(z.string().uuid()).optional(),
+  categoryIds: z.array(z.string().uuid()).optional(),
 });
 
 export type CreatePostInput = z.infer<typeof createPostSchema>;

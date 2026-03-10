@@ -38,7 +38,7 @@ export default function PostDetailPage({
       setSlug(post.slug || "");
       setContent(post.content || "");
       setExcerpt(post.excerpt || "");
-      setFeaturedImage(post.featured_image || "");
+      setFeaturedImage(post.featuredImage || "");
       setCategoryIds(post.categories?.map(c => c.id) || []);
       setStatus(post.status);
     }
@@ -55,8 +55,8 @@ export default function PostDetailPage({
         slug,
         content, 
         excerpt: excerpt || undefined,
-        featured_image: featuredImage || undefined,
-        category_ids: categoryIds,
+        featuredImage: featuredImage || undefined,
+        categoryIds: categoryIds,
         status 
       });
       toast.success("Post updated!");

@@ -31,8 +31,8 @@ export default function OrdersPage() {
     try {
       await createCheckout.mutateAsync({
         items: [
-          { name: "Demo Product", quantity: 1, unit_price: 2000 },
-          { name: "Add-on Feature", quantity: 2, unit_price: 500 },
+          { name: "Demo Product", quantity: 1, unitPrice: 2000 },
+          { name: "Add-on Feature", quantity: 2, unitPrice: 500 },
         ],
         currency: "usd",
       });
@@ -118,7 +118,7 @@ export default function OrdersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()}
+                        {new Date(order.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" asChild>

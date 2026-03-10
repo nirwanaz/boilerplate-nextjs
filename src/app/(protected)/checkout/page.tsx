@@ -34,7 +34,7 @@ export default function CheckoutPage() {
       // Product-based checkout (the API will auto-detect this)
       const checkoutData: any = {
         items: items.map((item) => ({
-          product_id: item.product_id,
+          productId: item.productId,
           quantity: item.quantity,
         })),
         currency: "usd",
@@ -114,7 +114,7 @@ export default function CheckoutPage() {
                 </TableHeader>
                 <TableBody>
                   {items.map((item) => (
-                    <TableRow key={item.product_id}>
+                    <TableRow key={item.productId}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>${(item.price / 100).toFixed(2)}</TableCell>
                       <TableCell>
@@ -123,7 +123,7 @@ export default function CheckoutPage() {
                           min="1"
                           value={item.quantity}
                           onChange={(e) =>
-                            updateQuantity(item.product_id, parseInt(e.target.value) || 1)
+                            updateQuantity(item.productId, parseInt(e.target.value) || 1)
                           }
                           className="w-20"
                         />
@@ -135,7 +135,7 @@ export default function CheckoutPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeItem(item.product_id)}
+                          onClick={() => removeItem(item.productId)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

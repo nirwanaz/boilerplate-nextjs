@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/shared/lib/supabase/server";
 import { PostService } from "@/domains/posts/services/post.service";
 
 export async function GET(
@@ -8,8 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
-    const service = new PostService(supabase);
+    const service = new PostService();
     const post = await service.getById(id);
 
     if (!post) {
@@ -29,10 +27,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
     const body = await request.json();
 
-    const service = new PostService(supabase);
+    const service = new PostService();
     const post = await service.update(id, body);
 
     return NextResponse.json(post);
@@ -49,9 +46,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
 
-    const service = new PostService(supabase);
+    const service = new PostService();
     await service.delete(id);
 
     return NextResponse.json({ success: true });

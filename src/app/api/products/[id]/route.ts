@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/shared/lib/supabase/server";
 import { ProductService } from "@/domains/products/services/product.service";
 
 export async function GET(
@@ -8,8 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
-    const service = new ProductService(supabase);
+    const service = new ProductService();
     
     const product = await service.getById(id);
     if (!product) {
@@ -29,15 +27,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
     const body = await request.json();
 
-    const service = new ProductService(supabase);
+    const service = new ProductService();
     const product = await service.update(id, body);
     return NextResponse.json(product);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal error";
-    const status = message.includes("permission") || message.includes("role") ? 403 : 
+    const status = message.includes("permission") || message.includes("role") || message.includes("Unauthorized") ? 403 : 
                    message.includes("not found") ? 404 : 400;
     return NextResponse.json({ error: message }, { status });
   }
@@ -49,14 +46,13 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
-    const service = new ProductService(supabase);
+    const service = new ProductService();
     
     await service.delete(id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal error";
-    const status = message.includes("permission") || message.includes("role") ? 403 : 
+    const status = message.includes("permission") || message.includes("role") || message.includes("Unauthorized") ? 403 : 
                    message.includes("not found") ? 404 : 400;
     return NextResponse.json({ error: message }, { status });
   }

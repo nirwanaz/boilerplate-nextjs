@@ -1,4 +1,3 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import type { Role, Profile } from "@/shared/types";
 
 const ROLE_HIERARCHY: Record<Role, number> = {
@@ -22,44 +21,15 @@ export function hasPermission(
 }
 
 /**
- * Fetch the current user's profile from the database.
+ * Fetch a profile-like object from a session user.
  */
-export async function getUserProfile(
-  supabase: SupabaseClient
-): Promise<Profile | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  return profile;
-}
-
-/**
- * Server-side guard: throws if the user doesn't have the required role.
- */
-export async function requireRole(
-  supabase: SupabaseClient,
-  requiredRoles: Role | Role[]
-): Promise<Profile> {
-  const profile = await getUserProfile(supabase);
-
-  if (!profile) {
-    throw new Error("Unauthorized: not authenticated");
-  }
-
-  if (!hasPermission(profile.role, requiredRoles)) {
-    throw new Error(
-      `Forbidden: requires role ${Array.isArray(requiredRoles) ? requiredRoles.join(" or ") : requiredRoles}`
-    );
-  }
-
-  return profile;
+export function transformUserToProfile(user: any): Profile {
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: user.name || null,
+    role: user.role || "user",
+    createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+    updatedAt: user.updatedAt?.toISOString() || new Date().toISOString(),
+  };
 }

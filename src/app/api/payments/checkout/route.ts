@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/shared/lib/supabase/server";
 import { PaymentService } from "@/domains/payments/services/payment.service";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
     const body = await request.json();
     const { origin } = new URL(request.url);
 
-    const service = new PaymentService(supabase);
+    const service = new PaymentService();
     
     // Detect if this is product-based checkout or manual checkout
-    const isProductCheckout = body.items?.[0]?.product_id !== undefined;
+    const isProductCheckout = body.items?.[0]?.productId !== undefined;
     
     let url: string;
     if (isProductCheckout) {

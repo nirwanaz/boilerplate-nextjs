@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/shared/lib/stripe/server";
-import { createClient } from "@/shared/lib/supabase/server";
 import { PaymentService } from "@/domains/payments/services/payment.service";
 
 export async function POST(request: Request) {
@@ -25,8 +24,7 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const supabase = await createClient();
-    const service = new PaymentService(supabase);
+    const service = new PaymentService();
     await service.handleWebhookCheckoutComplete(session.id);
   }
 

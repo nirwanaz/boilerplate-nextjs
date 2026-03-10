@@ -116,8 +116,8 @@ export default function AdminOrderDetailPage({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Refund this order?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will process a full refund via Stripe and update the order status to "refunded".
-                      This action cannot be undone.
+                    This will process a full refund via Stripe and update the order status to &quot;refunded&quot;.
+                    This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -146,12 +146,12 @@ export default function AdminOrderDetailPage({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">User ID</span>
-              <p className="font-mono text-xs mt-1">{order.user_id}</p>
+              <p className="font-mono text-xs mt-1">{order.userId}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Date</span>
               <p className="font-medium mt-1">
-                {new Date(order.created_at).toLocaleString()}
+                {new Date(order.createdAt).toLocaleString()}
               </p>
             </div>
             <div>
@@ -166,7 +166,7 @@ export default function AdminOrderDetailPage({
             <div>
               <span className="text-muted-foreground">Stripe Session</span>
               <p className="font-mono text-xs mt-1 truncate">
-                {order.stripe_session_id || "N/A"}
+                {order.stripeSessionId || "N/A"}
               </p>
             </div>
           </div>
@@ -186,15 +186,15 @@ export default function AdminOrderDetailPage({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {items.map((item: { id: string; name: string; quantity: number; unit_price: number }) => (
+                    {items.map((item: { id: string; name: string; quantity: number; unitPrice: number }) => (
                       <TableRow key={item.id}>
                         <TableCell>{item.name}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
                         <TableCell className="text-right">
-                          ${(item.unit_price / 100).toFixed(2)}
+                          ${(item.unitPrice / 100).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          ${((item.unit_price * item.quantity) / 100).toFixed(2)}
+                          ${((item.unitPrice * item.quantity) / 100).toFixed(2)}
                         </TableCell>
                       </TableRow>
                     ))}

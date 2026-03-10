@@ -4,18 +4,18 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface CartItem {
-  product_id: string;
+  productId: string;
   name: string;
   price: number;
   quantity: number;
-  image_url?: string | null;
+  imageUrl?: string | null;
 }
 
 interface CartStore {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
-  removeItem: (product_id: string) => void;
-  updateQuantity: (product_id: string, quantity: number) => void;
+  removeItem: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -28,12 +28,12 @@ export const useCartStore = create<CartStore>()(
       
       addItem: (item) => {
         const { items } = get();
-        const existingItem = items.find((i) => i.product_id === item.product_id);
+        const existingItem = items.find((i) => i.productId === item.productId);
         
         if (existingItem) {
           set({
             items: items.map((i) =>
-              i.product_id === item.product_id
+              i.productId === item.productId
                 ? { ...i, quantity: i.quantity + (item.quantity || 1) }
                 : i
             ),
@@ -45,17 +45,17 @@ export const useCartStore = create<CartStore>()(
         }
       },
       
-      removeItem: (product_id) => {
-        set({ items: get().items.filter((i) => i.product_id !== product_id) });
+      removeItem: (productId) => {
+        set({ items: get().items.filter((i) => i.productId !== productId) });
       },
       
-      updateQuantity: (product_id, quantity) => {
+      updateQuantity: (productId, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(product_id);
+          get().removeItem(productId);
         } else {
           set({
             items: get().items.map((i) =>
-              i.product_id === product_id ? { ...i, quantity } : i
+              i.productId === productId ? { ...i, quantity } : i
             ),
           });
         }

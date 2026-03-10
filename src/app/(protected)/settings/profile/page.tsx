@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/shared/lib/supabase/client";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { profileSchema, type ProfileInput } from "@/shared/lib/form-schemas";
+import { authClient } from "@/shared/auth/auth-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,47 +13,34 @@ import { toast } from "sonner";
 import { Loader2, Save } from "lucide-react";
 
 export default function ProfileSettingsPage() {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const supabase = createClient();
+  const { data: session, isPending: loading } = authClient.useSession();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ProfileInput>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { name: "" },
+  });
 
   useEffect(() => {
-    async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setEmail(user.email ?? "");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
-          .single();
-        if (profile) setFullName(profile.full_name ?? "");
-      }
-      setLoading(false);
+    if (session?.user) {
+      reset({ name: session.user.name || "" });
     }
-    loadProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session, reset]);
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({ full_name: fullName, updated_at: new Date().toISOString() })
-      .eq("id", user.id);
+  async function onSubmit(data: ProfileInput) {
+    const { error } = await authClient.updateUser({
+      name: data.name,
+    });
 
     if (error) {
-      toast.error("Failed to update profile");
+      toast.error(error.message || "Failed to update profile");
     } else {
       toast.success("Profile updated!");
     }
-    setSaving(false);
   }
 
   if (loading) {
@@ -61,6 +51,8 @@ export default function ProfileSettingsPage() {
     );
   }
 
+  if (!session) return null;
+
   return (
     <Card>
       <CardHeader>
@@ -68,21 +60,24 @@ export default function ProfileSettingsPage() {
         <CardDescription>Update your personal information</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="profileName">Full Name</Label>
+            <Label htmlFor="profileName">Full Name *</Label>
             <Input
               id="profileName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              {...register("name")}
               placeholder="Your name"
+              aria-invalid={!!errors.name}
             />
+            {errors.name && (
+              <p className="text-xs text-rose-400">{errors.name.message}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="profileEmail">Email</Label>
             <Input
               id="profileEmail"
-              value={email}
+              value={session.user.email}
               disabled
               className="opacity-60"
             />
@@ -90,8 +85,8 @@ export default function ProfileSettingsPage() {
               Contact support to change your email address.
             </p>
           </div>
-          <Button type="submit" disabled={saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             Save Changes
           </Button>
         </form>

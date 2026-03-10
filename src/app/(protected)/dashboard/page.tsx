@@ -47,7 +47,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back, {profile.full_name || profile.email}
+          Welcome back, {profile.fullName || profile.email}
         </h1>
         <p className="text-muted-foreground mt-1">
           Here&apos;s an overview of your workspace.
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Name</span>
-              <span className="text-sm font-medium">{profile.full_name || "—"}</span>
+              <span className="text-sm font-medium">{profile.fullName || "—"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Email</span>

@@ -1,6 +1,5 @@
 
 import { Metadata } from 'next';
-import { createClient } from "@/shared/lib/supabase/server";
 import { PostService } from "@/domains/posts/services/post.service";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +13,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
-  const service = new PostService(supabase);
+  const service = new PostService();
   const post = await service.getById(id);
   
   if (!post) {
@@ -30,26 +28,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: post.title,
       description: post.excerpt || undefined,
-      images: post.featured_image ? [{ url: post.featured_image }] : [],
+      images: post.featuredImage ? [{ url: post.featuredImage }] : [],
       type: 'article',
-      publishedTime: post.created_at,
+      publishedTime: post.createdAt,
     },
   };
 }
 
 export default async function BlogPostPage({ params }: Props) {
   const { id } = await params;
-  console.log(`[BlogPostPage] Fetching post with ID/Slug: ${id}`);
   
   try {
-    const supabase = await createClient();
-    const service = new PostService(supabase);
+    const service = new PostService();
     const post = await service.getById(id);
 
-    console.log(`[BlogPostPage] Result for ${id}:`, post ? `Found (Status: ${post.status})` : 'Not Found');
-
     if (!post || post.status !== 'published') {
-      console.log(`[BlogPostPage] Returning notFound() because post is missing or status is ${post?.status}`);
       notFound();
     }
   
@@ -71,52 +64,48 @@ export default async function BlogPostPage({ params }: Props) {
                 </Badge>
               ))}
             </div>
-            {/* ... other content ... */}
 
-          
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
-            {post.title}
-          </h1>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
+              {post.title}
+            </h1>
 
-          <div className="flex items-center justify-center gap-4 text-muted-foreground text-sm">
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              <time dateTime={post.created_at}>
-                {new Date(post.created_at).toLocaleDateString(undefined, {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </time>
+            <div className="flex items-center justify-center gap-4 text-muted-foreground text-sm">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <time dateTime={post.createdAt}>
+                  {new Date(post.createdAt).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </time>
+              </div>
             </div>
-            {/* Author placeholder */}
           </div>
         </div>
-      </div>
 
-      {post.featured_image && (
-        <div className="rounded-xl overflow-hidden shadow-2xl mb-12 aspect-video relative bg-muted">
-          <img
-            src={post.featured_image}
-            alt={post.title}
-            className="object-cover w-full h-full"
-          />
+        {post.featuredImage && (
+          <div className="rounded-xl overflow-hidden shadow-2xl mb-12 aspect-video relative bg-muted">
+            <img
+              src={post.featuredImage}
+              alt={post.title}
+              className="object-cover w-full h-full"
+            />
+          </div>
+        )}
+
+        {post.excerpt && (
+          <div className="text-xl md:text-2xl text-muted-foreground font-medium mb-10 leading-relaxed border-l-4 border-primary pl-6 italic">
+            {post.excerpt}
+          </div>
+        )}
+
+        <div className="prose prose-lg dark:prose-invert prose-blue max-w-none mx-auto">
+          <div dangerouslySetInnerHTML={{ __html: post.content }} />
         </div>
-      )}
-
-      {post.excerpt && (
-        <div className="text-xl md:text-2xl text-muted-foreground font-medium mb-10 leading-relaxed border-l-4 border-primary pl-6 italic">
-          {post.excerpt}
-        </div>
-      )}
-
-      <div className="prose prose-lg dark:prose-invert prose-blue max-w-none mx-auto">
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
-      </div>
-    </article>
+      </article>
     );
   } catch (error) {
-    console.error(`[BlogPostPage] Error fetching post ${id}:`, error);
     notFound();
   }
 }

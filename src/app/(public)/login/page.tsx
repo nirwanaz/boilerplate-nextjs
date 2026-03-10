@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/shared/lib/supabase/client";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, type LoginInput } from "@/shared/lib/form-schemas";
+import { authClient } from "@/shared/auth/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,30 +19,33 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, LogIn } from "lucide-react";
+import { SocialAuth } from "../_components/social-auth";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+  async function onSubmit(data: LoginInput) {
+    const { error } = await authClient.signIn.email({
+      email: data.email,
+      password: data.password,
+      callbackURL: "/dashboard",
     });
 
     if (error) {
-      toast.error(error.message);
-      setLoading(false);
+      toast.error(error.message || "Email atau password salah");
       return;
     }
 
-    toast.success("Welcome back!");
+    toast.success("Selamat datang kembali!");
     router.push("/dashboard");
     router.refresh();
   }
@@ -58,7 +63,7 @@ export default function LoginPage() {
           Sign in to your account to continue
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-slate-300">
@@ -68,11 +73,14 @@ export default function LoginPage() {
               id="email"
               type="email"
               placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              autoComplete="email"
+              {...register("email")}
+              aria-invalid={!!errors.email}
               className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500/20"
             />
+            {errors.email && (
+              <p className="text-xs text-rose-400 mt-1">{errors.email.message}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="text-slate-300">
@@ -82,20 +90,36 @@ export default function LoginPage() {
               id="password"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              autoComplete="current-password"
+              {...register("password")}
+              aria-invalid={!!errors.password}
               className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500/20"
             />
+            {errors.password && (
+              <p className="text-xs text-rose-400 mt-1">{errors.password.message}</p>
+            )}
           </div>
+
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-700" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-slate-900 px-2 text-slate-400">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <SocialAuth />
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
-            disabled={loading}
+            disabled={isSubmitting}
           >
-            {loading ? (
+            {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : null}
             Sign In

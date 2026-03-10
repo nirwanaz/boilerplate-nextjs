@@ -56,7 +56,7 @@ export function useRefundOrder() {
       const res = await fetch("/api/payments/refund", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: orderId }),
+        body: JSON.stringify({ orderId }),
       });
       if (!res.ok) {
         const err = await res.json();

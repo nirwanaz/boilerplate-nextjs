@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/shared/lib/supabase/server";
 import { SettingsService } from "@/domains/settings/services/settings.service";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const service = new SettingsService(supabase);
+    const service = new SettingsService();
     const settings = await service.getAppSettings();
     return NextResponse.json(settings);
   } catch (error) {
@@ -16,9 +14,8 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const supabase = await createClient();
     const body = await request.json();
-    const service = new SettingsService(supabase);
+    const service = new SettingsService();
     const setting = await service.updateAppSetting(body);
     return NextResponse.json(setting);
   } catch (error) {

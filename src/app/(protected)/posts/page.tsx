@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { usePosts, useCreatePost, useDeletePost } from "@/domains/posts/hooks/use-posts";
+import { createPostSchema, type CreatePostInput } from "@/domains/posts/entities/post";
 import { SearchInput } from "@/shared/components/search-input";
 import { RichTextEditor } from "@/shared/components/rich-text-editor";
 import { ImageUpload } from "@/shared/components/image-upload";
@@ -31,48 +34,60 @@ import { toast } from "sonner";
 import { Plus, Trash2, Eye, Loader2, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { generateSlug } from "@/shared/lib/slug";
+import { cn } from "@/lib/utils";
 
 export default function PostsPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [content, setContent] = useState("");
-  const [excerpt, setExcerpt] = useState("");
-  const [featuredImage, setFeaturedImage] = useState("");
-  const [categoryIds, setCategoryIds] = useState<string[]>([]);
 
   const { data: posts, isLoading } = usePosts(search);
   const createPost = useCreatePost();
   const deletePost = useDeletePost();
 
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CreatePostInput>({
+    resolver: zodResolver(createPostSchema),
+    defaultValues: {
+      title: "",
+      slug: "",
+      content: "",
+      excerpt: "",
+      featuredImage: "",
+      status: "draft",
+      categoryIds: [],
+    },
+  });
+
+  const watchTitle = watch("title", "");
+  const watchSlug = watch("slug", "");
+  const watchContent = watch("content", "");
+  const watchExcerpt = watch("excerpt", "");
+  const watchFeaturedImage = watch("featuredImage", "");
+  const watchCategoryIds = watch("categoryIds", []);
+
   // Auto-generate slug from title
   useEffect(() => {
-    if (title && !slug) {
-      setSlug(generateSlug(title));
+    if (watchTitle && !watchSlug) {
+      setValue("slug", generateSlug(watchTitle));
     }
-  }, [title, slug]);
+  }, [watchTitle, watchSlug, setValue]);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(data: CreatePostInput) {
     try {
-      await createPost.mutateAsync({ 
-        title, 
-        slug: slug || undefined,
-        content, 
-        excerpt: excerpt || undefined,
-        featured_image: featuredImage || undefined,
-        category_ids: categoryIds,
-        status: "draft" 
+      await createPost.mutateAsync({
+        ...data,
+        slug: data.slug || undefined,
+        excerpt: data.excerpt || undefined,
+        featuredImage: data.featuredImage || undefined,
       });
       toast.success("Post created!");
-      // Reset form
-      setTitle("");
-      setSlug("");
-      setContent("");
-      setExcerpt("");
-      setFeaturedImage("");
-      setCategoryIds([]);
+      reset();
       setOpen(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create post");
@@ -108,20 +123,20 @@ export default function PostsPage() {
               <DialogTitle className="text-2xl">Create New Article</DialogTitle>
               <p className="text-sm text-muted-foreground">Write and publish your article</p>
             </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-6 mt-4">
+            <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-2">
                   <Label htmlFor="postTitle" className="text-base font-semibold">
-                    Title
+                    Title *
                   </Label>
                   <Input
                     id="postTitle"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    {...register("title")}
                     placeholder="Enter an engaging title for your article..."
-                    required
-                    className="text-lg h-12"
+                    aria-invalid={!!errors.title}
+                    className={cn("text-lg h-12", errors.title && "border-rose-500/50")}
                   />
+                  {errors.title && <p className="text-xs text-rose-400">{errors.title.message}</p>}
                 </div>
                 
                 <div className="col-span-2 space-y-2">
@@ -130,8 +145,7 @@ export default function PostsPage() {
                   </Label>
                   <Input
                     id="postSlug"
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
+                    {...register("slug")}
                     placeholder="auto-generated-from-title"
                     className="font-mono text-sm"
                   />
@@ -147,45 +161,45 @@ export default function PostsPage() {
                 </Label>
                 <Textarea
                   id="postExcerpt"
-                  value={excerpt}
-                  onChange={(e) => setExcerpt(e.target.value)}
+                  {...register("excerpt")}
                   placeholder="Write a short summary of your article..."
                   rows={3}
                   maxLength={500}
                   className="resize-none"
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {excerpt.length}/500 characters
+                  {(watchExcerpt || "").length}/500 characters
                 </p>
               </div>
 
               <ImageUpload
-                value={featuredImage}
-                onChange={setFeaturedImage}
+                value={watchFeaturedImage || ""}
+                onChange={(val) => setValue("featuredImage", val)}
               />
 
               <CategorySelector
-                selectedIds={categoryIds}
-                onChange={setCategoryIds}
+                selectedIds={watchCategoryIds || []}
+                onChange={(ids) => setValue("categoryIds", ids)}
               />
 
               <div className="space-y-2">
                 <Label htmlFor="postContent" className="text-base font-semibold">
-                  Content
+                  Content *
                 </Label>
                 <RichTextEditor
-                  content={content}
-                  onChange={setContent}
+                  content={watchContent}
+                  onChange={(val) => setValue("content", val)}
                   placeholder="Start writing your article... Use the toolbar to format your content."
                 />
+                {errors.content && <p className="text-xs text-rose-400">{errors.content.message}</p>}
               </div>
               
               <Button 
                 type="submit" 
                 className="w-full h-11 text-base" 
-                disabled={createPost.isPending}
+                disabled={isSubmitting}
               >
-                {createPost.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 Create Post
               </Button>
             </form>
@@ -233,10 +247,10 @@ export default function PostsPage() {
                   posts?.map((post) => (
                     <TableRow key={post.id}>
                       <TableCell>
-                        {post.featured_image ? (
+                        {post.featuredImage ? (
                           <div className="relative w-16 h-10 rounded overflow-hidden bg-muted">
                             <img 
-                              src={post.featured_image} 
+                              src={post.featuredImage} 
                               alt={post.title}
                               className="w-full h-full object-cover"
                             />
@@ -279,7 +293,7 @@ export default function PostsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                        {new Date(post.created_at).toLocaleDateString()}
+                        {new Date(post.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right space-x-2 whitespace-nowrap">
                         <Button variant="ghost" size="icon" asChild>

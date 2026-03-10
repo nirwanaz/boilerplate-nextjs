@@ -1,29 +1,27 @@
-import { createClient } from "@/shared/lib/supabase/server";
-import { getUserProfile, requireRole } from "@/shared/auth/rbac";
-import type { Role, Profile, UserSession } from "@/shared/types";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { transformUserToProfile } from "@/shared/auth/rbac";
+import type { UserSession } from "@/shared/types";
 
 /**
  * Data Access Layer: get the current authenticated user session.
  * Returns null if not authenticated.
  */
 export async function getSession(): Promise<UserSession | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (!user) return null;
-
-  const profile = await getUserProfile(supabase);
-  if (!profile) return null;
+  if (!session) return null;
 
   return {
     user: {
-      id: user.id,
-      email: user.email!,
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name || null,
     },
-    profile,
+    profile: transformUserToProfile(session.user),
   };
 }
 
@@ -40,18 +38,22 @@ export async function requireAuth(): Promise<UserSession> {
 
 /**
  * DAL: require specific role(s). Redirects to /unauthorized or /login.
+ * Note: Role-based logic should be integrated with Better Auth's custom properties or plugins.
  */
 export async function requireAuthWithRole(
-  roles: Role | Role[]
-): Promise<{ session: UserSession; profile: Profile }> {
-  const supabase = await createClient();
-  const profile = await requireRole(supabase, roles);
+  roles: string | string[]
+): Promise<{ session: UserSession; profile: any }> {
+  const session = await requireAuth();
+  
+  const userRoles = Array.isArray(roles) ? roles : [roles];
+  const userRole = session.profile.role;
+
+  if (!userRoles.includes(userRole)) {
+    redirect("/unauthorized");
+  }
 
   return {
-    session: {
-      user: { id: profile.id, email: profile.email },
-      profile,
-    },
-    profile,
+    session,
+    profile: session.profile,
   };
 }

@@ -1,68 +1,86 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
 import type { AppSettings, UserSettings, UpdateUserSettingsInput } from "../entities/settings";
 
 export class SettingsRepository {
-  constructor(private supabase: SupabaseClient) {}
-
   // App Settings
   async getAppSettings(): Promise<AppSettings[]> {
-    const { data, error } = await this.supabase
-      .from("app_settings")
-      .select("*")
-      .order("key");
-
-    if (error) throw error;
-    return data ?? [];
+    const data = await db.query.appSettings.findMany({
+      orderBy: [schema.appSettings.key]
+    });
+    return data.map((item: any) => this.transformAppSettings(item));
   }
 
   async getAppSetting(key: string): Promise<AppSettings | null> {
-    const { data, error } = await this.supabase
-      .from("app_settings")
-      .select("*")
-      .eq("key", key)
-      .single();
-
-    if (error && error.code !== "PGRST116") throw error;
-    return data;
+    const data = await db.query.appSettings.findFirst({
+      where: eq(schema.appSettings.key, key)
+    });
+    return data ? this.transformAppSettings(data) : null;
   }
 
   async upsertAppSetting(key: string, value: string): Promise<AppSettings> {
-    const { data, error } = await this.supabase
-      .from("app_settings")
-      .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" })
-      .select()
-      .single();
+    const existing = await this.getAppSetting(key);
+    const id = existing?.id || crypto.randomUUID();
 
-    if (error) throw error;
-    return data;
+    await db.insert(schema.appSettings)
+      .values({ 
+        id, 
+        key, 
+        value, 
+        updatedAt: new Date() 
+      })
+      .onConflictDoUpdate({
+        target: schema.appSettings.key,
+        set: { value, updatedAt: new Date() }
+      });
+
+    return (await this.getAppSetting(key))!;
   }
 
   // User Settings
   async getUserSettings(userId: string): Promise<UserSettings | null> {
-    const { data, error } = await this.supabase
-      .from("user_settings")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-
-    if (error && error.code !== "PGRST116") throw error;
-    return data;
+    const data = await db.query.userSettings.findFirst({
+      where: eq(schema.userSettings.userId, userId)
+    });
+    return data ? this.transformUserSettings(data) : null;
   }
 
   async upsertUserSettings(
     userId: string,
     input: UpdateUserSettingsInput
   ): Promise<UserSettings> {
-    const { data, error } = await this.supabase
-      .from("user_settings")
-      .upsert(
-        { user_id: userId, ...input, updated_at: new Date().toISOString() },
-        { onConflict: "user_id" }
-      )
-      .select()
-      .single();
+    const existing = await this.getUserSettings(userId);
+    const id = existing?.id || crypto.randomUUID();
 
-    if (error) throw error;
-    return data;
+    await db.insert(schema.userSettings)
+      .values({ 
+        id, 
+        userId, 
+        ...input, 
+        updatedAt: new Date() 
+      })
+      .onConflictDoUpdate({
+        target: schema.userSettings.userId,
+        set: { ...input, updatedAt: new Date() }
+      });
+
+    return (await this.getUserSettings(userId))!;
+  }
+
+  private transformAppSettings(data: any): AppSettings {
+    return {
+      ...data,
+      updatedAt: data.updatedAt.toISOString(),
+      createdAt: data.createdAt.toISOString()
+    };
+  }
+
+  private transformUserSettings(data: any): UserSettings {
+    return {
+      ...data,
+      updatedAt: data.updatedAt.toISOString(),
+      createdAt: data.createdAt.toISOString()
+    };
   }
 }
