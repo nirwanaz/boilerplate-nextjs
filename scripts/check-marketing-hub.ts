@@ -1,10 +1,6 @@
-import * as dotenv from "dotenv";
-dotenv.config();
-
 import { marketingService } from "../src/domains/marketing/services/marketing.service";
 import { newsletterService } from "../src/domains/newsletter/services/newsletter.service";
 import { db } from "../src/lib/db";
-import { landingContent, testimonials, seoSettings, subscribers, newsletters } from "../src/lib/db/schema";
 import { sql } from "drizzle-orm";
 
 async function runDiagnostics() {
@@ -49,7 +45,7 @@ async function runDiagnostics() {
     // Test Subscription (internal call)
     const testEmail = `test-${Date.now()}@example.com`;
     console.log(`⌛ Testing subscription for: ${testEmail}`);
-    const sub = await newsletterService.subscribe({ email: testEmail });
+    const sub = await newsletterService.subscribe({ email: testEmail, source: "test" });
     console.log(`✅ Subscription successful: ${sub.id}`);
     
     // Clean up test sub
